@@ -11,6 +11,53 @@ const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
 
+// Structures
+// Structure to store member data
+struct Member {
+    //declare variables
+    string member_id;
+    string full_name;
+    string email;
+    string password;
+    string contact;
+    string status;
+    
+    //Constructor to initialize member data
+    Member( string id="", string name="", string mail="", string pass="", 
+            string cont="", string stat="Active"){
+        member_id = id;
+        full_name = name;
+        email = mail;
+        password = pass;
+        contact = cont;
+        status = stat;
+    }
+};
+
+// Structure to store admin data
+struct Admin {
+    //declare variables
+    string admin_id;
+    string full_name;
+    string email;
+    string password;
+    string contact;
+    string position;
+    string status;
+    
+    //Constructor to initialize admin data
+    Admin(  string id="", string name="", string mail="", string pass="", 
+            string cont="", string pos="Admin", string stat="Active"){
+        admin_id = id;
+        full_name = name;
+        email = mail;
+        password = pass;
+        contact = cont;
+        position = pos;
+        status = stat;
+    }
+};
+
 //Helper functions
 void clearScreen() {
     system("cls");
