@@ -12,6 +12,19 @@ const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
 
 // Structures
+// struct Node that can store any data type "T"
+template <typename T>
+struct Node {
+    T data;
+    Node* next;
+    
+    // Constructor to set the data and next
+    Node(const T& value) {
+        data = value;
+        next = nullptr;
+    }
+};
+
 // Structure to store member data
 struct Member {
     //declare variables
@@ -58,6 +71,65 @@ struct Admin {
     }
 };
 
+// LinkedList base class that can store any data type "T"
+template <typename T>
+class LinkedList {
+    //protected data
+    protected:
+        Node<T> *head, *temp;
+        
+    //public functions
+    public:
+        // Constructor to set the head to null (create an empty list)
+        LinkedList() {head=nullptr;}
+        
+        //check if the list is empty
+        bool isEmpty() const {
+            if (head == nullptr)
+                return true;
+            else
+                return false;
+        }
+        
+        //append data at the end of list with the received value
+        void append(const T& value) {
+
+            //DMA for a new node with the value
+            Node<T>* newNode = new Node<T>(value);
+
+            //if list is empty, set head as newnode, else temp is new node
+            if (isEmpty()) {
+                head = newNode;
+            } 
+            else {
+                temp = head;
+                while (temp->next != nullptr) {
+                    temp = temp->next;
+                }//loop to reach the last node
+                temp->next = newNode;
+            }
+        }
+        
+        //return head node pointer for accessing the list from outside the class.
+        Node<T>* getHead() const {
+            return head;
+        }
+        
+        //delete all nodes in the list.
+        void clear() {
+            while (head != nullptr) {
+                temp = head;
+                head = head->next;
+                delete temp;
+            }
+        }
+        
+        //virtual Destructor to call clear() and clean up the list.
+        virtual ~LinkedList() {
+            clear();
+        }
+};
+
 //Helper functions
 void clearScreen() {
     system("cls");
@@ -74,7 +146,7 @@ void mainMenu() {
         cout << "               WELCOME TO YESMOLAR PIZZA STORE                \n";
         cout << "===============================================================\n";
         cout << "1. Sign Up\n";
-        cout << "2. Login\n";
+        cout << "2. Member Login\n";
         cout << "3. Admin Login\n";
         cout << "4. Exit\n";
         cout << "===============================================================\n";
