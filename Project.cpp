@@ -130,7 +130,149 @@ class LinkedList {
         }
 };
 
-//Helper functions
+// Derived class for member linked list
+class MemberLinkedList : public LinkedList<Member> {
+public:
+    //open member.txt
+    void loadMembers() {
+        ifstream file(MEMBERS_FILE);
+
+        //if file doesnt exist, create an empty file and return
+        if (!file.is_open()) {
+            ofstream createFile(MEMBERS_FILE);
+            createFile.close();
+            return;
+        }
+
+        // Clear existing list
+        clear();
+
+        string line;
+        while (getline(file, line)) {
+            //skip the empty line
+            if (line.empty()) continue;
+            
+            //declare an obj for struct Member
+            Member member;
+
+            //assign the data in files to the obj attributes
+            member.member_id = line;
+            getline(file, member.full_name);
+            getline(file, member.email);
+            getline(file, member.password);
+            getline(file, member.contact);
+            getline(file, member.status);
+            
+            //add the collected Member obj to the linked list;
+            append(member);
+        }
+        //close file after reading and appending
+        file.close();
+    }
+    
+    //function to check if the email already exist in member signup()
+    bool emailExists(const string& email) const {
+        //set the current to the head of linked list
+        Node<Member>* current = head;
+
+        //while the current is not null
+        while (current != nullptr) {
+            //linear search
+            //return true when current email = registered email
+            if (current->data.email == email) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+    
+    //function to find the member by email
+    Member* findMemberByEmail(const string& email) {
+        //set the current to the head of linked list
+        Node<Member>* current = head;
+
+        //while the current is not null
+        while (current != nullptr) {
+            //linear search
+            //return true and pointer to the current Member data
+            if (current->data.email == email) {
+                return &(current->data);
+            }
+            current = current->next;
+        }
+        //return null if not found
+        return nullptr;
+    }
+};
+
+// Derived class for admin linked list
+class AdminLinkedList : public LinkedList<Admin> {
+public:
+    //open admin.txt
+    void loadAdmins() {
+        ifstream file(ADMINS_FILE);
+
+        //if file doesnt exist, create an empty file and return
+        if (!file.is_open()) {
+            ofstream createFile(ADMINS_FILE);
+            createFile.close();
+            return;
+        }
+
+        // Clear existing list
+        clear();
+
+        string line;
+        while (getline(file, line)) {
+            //skip the empty line
+            if (line.empty()) continue;
+            
+            //declare an Admin obj
+            Admin admin;
+
+            //assign the data in files to the obj attributes
+            admin.admin_id = line;
+            getline(file, admin.full_name);
+            getline(file, admin.email);
+            getline(file, admin.password);
+            getline(file, admin.contact);
+            getline(file, admin.position);
+            getline(file, admin.status);
+            
+            //add the collected Admin obj to the linked list;
+            append(admin);
+        }
+        //close file after reading and appending
+        file.close();
+    }
+    
+    //function to find the admin by email
+    Admin* findAdminByEmail(const string& email) {
+        //set the current to the head of linked list
+        Node<Admin>* current = head;
+
+        //while the current is not null
+        while (current != nullptr) {
+            //linear search
+            //return true and pointer to the current Admin data
+            if (current->data.email == email) {
+                return &(current->data);
+            }
+            current = current->next;
+        }
+        //return null if not found
+        return nullptr;
+    }
+};
+
+// Global variables
+MemberLinkedList memberList;
+AdminLinkedList adminList;
+Member loggedInMember;
+Admin loggedInAdmin;
+
+// Helper functions
 void clearScreen() {
     system("cls");
 }
