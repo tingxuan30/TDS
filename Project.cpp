@@ -294,6 +294,7 @@ Admin loggedInAdmin;
 // Function Prototype
 void mainMenu();
 void memberMenu(Member loggedInMember);
+void adminMenu(Admin loggedInAdmin);
 
 // Helper functions
 void clearScreen() {
@@ -653,7 +654,7 @@ void signup() {
     cout << "________________________________________________________\n";
     cout << "|Registration successful! Your Member ID: " << member_id << "        |\n";
     cout << "|______________________________________________________|\n";
-    cout << "\nPress [ENTER] to return to login menu.";
+    cout << "\nPress [ENTER] to return to Main Menu.";
     cin.ignore();
     clearScreen();
 }
@@ -693,7 +694,7 @@ void login() {
     
     //call function in member linked list to check if the email is registered
     Member* member = memberList.findMemberByEmail(email);
-    //if email == null, the linear search reach till the end of linked list with
+    //if member == null, the linear search reach till the end of linked list with
     //no matching result (email is not registered)
     if (member == nullptr) {
         cout << "________________________________________________________\n";
@@ -741,22 +742,123 @@ void login() {
             return;
         } else {
             //if the password does not match, increase the attempt
-            //ask user to re-enter until max out
+            //ask member to re-enter until max out
             attempts++;
             cout << "________________________________________________________\n";
             cout << "|Incorrect password! Attempts left: " << 3 - attempts <<"                  |\n";
             cout << "|______________________________________________________|\n";
             if (attempts < 3) {
-                cout << "Please enter your password again: ";
+                cout << "\nPlease enter your password again: ";
                 getline(cin, currentPassword);
             }
         }
     }
     //display error message when attempt max-out & return to mainMenu()
-    cout << "________________________________________________________\n";
+    cout << "\n________________________________________________________\n";
     cout << "|Too many failed attempts. Login terminated.           |\n";
     cout << "|______________________________________________________|\n";
-    cout << "\nPress [ENTER] to return to login menu.";
+    cout << "\nPress [ENTER] to return to Main Menu.";
+    cin.ignore();
+    clearScreen();
+}
+
+//function to login to adminMenu with admin account/data
+void adminLogin() {
+    //declare the required attributes (email & password)
+    string email, password;
+    bool hasAt = false, hasDot = false;
+    
+    do {
+        //get email from admin
+        cout << "\nEnter your email, [R] to return to the main menu: ";
+        getline(cin, email);
+    
+        //return to Main Menu if admin entered R
+        if (email == "R" || email == "r") {
+            clearScreen();
+            mainMenu();
+            return;
+        }
+        
+        //check if the email format is correct (contains @ & .)
+        for (int i=0;i<email.length();i++) {
+            char c = email[i];
+            if (c == '@') hasAt = true;
+            if (c == '.') hasDot = true;
+        }
+        
+        //display error message if email format is incorrect
+        if (!hasAt || !hasDot) {
+            cout << "________________________________________________________\n";
+            cout << "|Invalid email format! Must include @ and . symbol     |\n";
+            cout << "|______________________________________________________|\n";
+        }
+    } while (!hasAt || !hasDot);
+
+    //call function in admin linked list to check if the email is registered
+    Admin* admin = adminList.findAdminByEmail(email);
+    //if admin == null, the linear search reach till the end of linked list with
+    //no matching result (email is not registered)
+    if (admin == nullptr) {
+        cout << "________________________________________________________\n";
+        cout << "|Email not found.                                      |\n";
+        cout << "|______________________________________________________|\n";
+        cout << "\nPress [ENTER] to continue.";
+        cin.ignore();
+        clearScreen();
+        return;
+    }
+    
+    //check if the account is active
+    if (admin->status != "Active") {
+        cout << "________________________________________________________\n";
+        cout << "|Your account is inactive. Please contact Superadmin.  |\n";
+        cout << "|______________________________________________________|\n";
+        cout << "\nPress [ENTER] to return to Main Menu.";
+        cin.ignore();
+        clearScreen();
+        return;
+    }
+
+    int attempts = 0;
+    string currentPassword;
+
+    //get password from admin
+    cout << "\nEnter your password: ";
+    getline(cin, currentPassword);
+    
+    //allow the admin to re-enter password until attempt max-out
+    while (attempts < 3) {
+        //login successful if password matched
+        if (currentPassword == admin->password) {
+            cout << "________________________________________________________\n";
+            cout << "|Logged in Successfully!                               |\n";
+            cout << "|______________________________________________________|\n";
+            loggedInAdmin = *admin;
+            cout << "\nPress [ENTER] to continue.";
+            cin.ignore();
+            adminMenu(loggedInAdmin);
+            return;
+        //ask admin to re-enter password if unmatched
+        } else {
+            //if the password does not match, increase the attempt
+            //ask admin to re-enter until max out
+            attempts++;
+            cout << "________________________________________________________\n";
+            cout << "|Incorrect password! Attempts left: " << 3 - attempts <<"                  |\n";
+            cout << "|______________________________________________________|\n";
+            if (attempts < 3) {
+                cout << "\nPlease enter your password again: ";
+                getline(cin, currentPassword);
+            }
+        }
+    }
+
+    //display error message when attempt max-out & return to mainMenu()
+    cout << "\n________________________________________________________\n";
+    cout << "|Too many failed attempts. Login terminated.           |\n";
+    cout << "|______________________________________________________|\n";
+    cout << "\nPress [ENTER] to return to Main Menu.";
     cin.ignore();
     clearScreen();
 }
@@ -784,6 +886,42 @@ void memberMenu(Member loggedInMember) {
             
         //if-else statement to determine the corresponding actions
         if (choice == "6") {
+            clearScreen();
+            mainMenu();
+            return;
+        }
+        else {
+            cout << "Invalid choice! Press [ENTER] to retry.";
+            cin.get();
+        }
+    }
+}
+
+//function to display adminMenu
+void adminMenu(Admin loggedInAdmin) {
+    while (true) {
+        //display adminMenu
+        clearScreen();
+        cout << "\n===============================================================\n";
+        cout << "                          WELCOME " << loggedInAdmin.full_name << endl;
+        cout << "===============================================================\n";
+        cout << "1. View Product Inventory\n";
+        cout << "2. View Admin List\n";
+        cout << "3. View/Edit Member List\n";
+        cout << "4. View Order Record\n";
+        cout << "5. View Rating Record\n";
+        cout << "6. View Sales Report\n";
+        cout << "7. View My Admin Profile\n";
+        cout << "8. Log Out\n";
+        cout << "===============================================================\n";
+            
+        //get choice from admin
+        string choice;
+        cout << "Enter your choice: ";
+        getline(cin, choice);
+            
+        //if-else statement to determine the corresponding actions
+        if(choice == "8") {
             clearScreen();
             mainMenu();
             return;
@@ -838,7 +976,7 @@ void mainMenu() {
             cout << "\n===============================================================\n";
             cout << "                    Logging In As Admin...                     \n";
             cout << "===============================================================\n";
-            //adminLogin();
+            adminLogin();
         }
         else if (choice == "4") {
             //thank the user and exit the program
