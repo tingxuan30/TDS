@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <cctype>
 using namespace std;
@@ -11,6 +12,9 @@ const string MEMBERS_FILE = "member.txt";
 const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
+
+// Function Prototype
+void mainMenu();
 
 // Structures
 // struct Node that can store any data type "T"
@@ -134,12 +138,12 @@ class LinkedList {
 // Derived class for member linked list
 class MemberLinkedList : public LinkedList<Member> {
 public:
-    //open member.txt
+    //open member.txt in read mode
     void loadMembers() {
         ifstream file(MEMBERS_FILE);
 
         //if file doesnt exist, create an empty file and return
-        if (!file.is_open()) {
+        if (!file) {
             ofstream createFile(MEMBERS_FILE);
             createFile.close();
             return;
@@ -210,12 +214,12 @@ public:
 // Derived class for admin linked list
 class AdminLinkedList : public LinkedList<Admin> {
 public:
-    //open admin.txt
+    //open admin.txt in read mode
     void loadAdmins() {
         ifstream file(ADMINS_FILE);
 
         //if file doesnt exist, create an empty file and return
-        if (!file.is_open()) {
+        if (!file) {
             ofstream createFile(ADMINS_FILE);
             createFile.close();
             return;
@@ -297,12 +301,12 @@ void clearScreen() {
 
 // Function to get next member ID
 string getNextMemberId() {
-    //open member_id.txt
+    //open member_id.txt in read mode
     ifstream file(MEMBERS_ID_FILE);
     string lastId;
 
     //if the file is open, read line-by-line to get the latest member_id
-    if (file.is_open()) {
+    if (file) {
         string line;
         while (getline(file, line)) {
             if (!line.empty()) lastId = line;
@@ -318,7 +322,6 @@ string getNextMemberId() {
 
     //create a new member_id by incrementing latest member_id (exp: U0001+1 = U0002)
     if (!lastId.empty()) {
-        string letter = "U";
         //initialize the numeric part of member_id as null
         string numericPart = "";
         //add up the numeric part of the lastest member_id
@@ -329,9 +332,9 @@ string getNextMemberId() {
 
         //convert the numeric part of the latest member_id into int
         int num = stoi(numericPart);
-        if (num != -1) {
-            return letter + to_string(num + 1); // returns the new latest member_id
-        }
+        stringstream finalId;
+        finalId << "U" << setw(4) << setfill('0') << (num + 1);
+        return finalId.str();
     }
     //return initial member_id if the latest member_id is null
     return "U0001";
@@ -339,12 +342,12 @@ string getNextMemberId() {
 
 // Function to get next admin ID
 string getNextAdminId() {
-    //open admin_id.txt
+    //open admin_id.txt in read mode
     ifstream file(ADMINS_ID_FILE);
     string lastId;
 
     //if the file is open, read line-by-line to get the latest admin_id
-    if (file.is_open()) {
+    if (file) {
         string line;
         while (getline(file, line)) {
             if (!line.empty()) lastId = line;
@@ -361,7 +364,6 @@ string getNextAdminId() {
     //create a new admin_id by incrementing latest admin_id (exp: A0001+1 = A0002)
     if (!lastId.empty()) {
         //initialize the numeric part of admin_id as null
-        string letter = "A";
         //add up the numeric part of the lastest admin_id
         string numericPart = "";
         numericPart += lastId[1]; //0
@@ -371,12 +373,286 @@ string getNextAdminId() {
 
         //convert the numeric part of the latest admin_id into int
         int num = stoi(numericPart);
-        if (num != -1) {
-            return letter + to_string(num + 1); // returns the new latest admin_id
-        }
+        stringstream finalId;
+        finalId << "A" << setw(4) << setfill('0') << (num + 1);
+        return finalId.str();
     }
     //return initial admin_id if the latest admin_id is null
     return "A0001";
+}
+
+//function to append new member account/data into member.txt
+void saveMember(const Member& member) {
+    //open member.txt in read mode
+    bool fileIsEmpty = true;
+    {
+        ifstream file(MEMBERS_FILE);
+        if (file) {
+            string line;
+            //check if file is empty
+            if (getline(file, line)) {
+                fileIsEmpty = false;
+            }
+        }
+    } //file closes
+
+    //open member.txt in append mode
+    ofstream file(MEMBERS_FILE, ios::app);
+    if (file) {
+        //add newline only if file isn't empty
+        if (!fileIsEmpty) {
+            file << "\n";
+        }
+        
+        //append new member data into member.txt
+        file << member.member_id << "\n"
+             << member.full_name << "\n"
+             << member.email << "\n"
+             << member.password << "\n"
+             << member.contact << "\n"
+             << member.status << "\n";
+    }
+    //file closes
+}
+
+//function to register a new member account/data
+void signup() {
+    //call getNextMemberId to auto-create the latest member_id
+    string member_id = getNextMemberId();
+
+    //initialize the member account status as Active
+    string status = "Active";
+
+    //declare other attributes for member account
+    string full_name, email, password, confirm_password, contact;
+    
+    //full_name validation
+    while (true) {
+        //display requirements
+        cout << "_______________________________________________\n";
+        cout << "| NAME REQUIREMENTS                           |\n";
+        cout << "|_____________________________________________|\n";
+        cout << "|1. Name must have at least 5 characters      |\n";
+        cout << "|2. No special character(s) allowed           |\n";
+        cout << "|3. No number(s) allowed                      |\n";
+        cout << "|_____________________________________________|\n";
+        cout << "\nEnter your full name, [R] to return to the main menu: ";
+        //get full_name from user
+        getline(cin, full_name);
+        
+        //return to mainMenu() if user enters R
+        if (full_name == "R" || full_name == "r") {
+            clearScreen();
+            mainMenu();
+            return;
+        }
+
+        bool valid = true;
+        int letterCount = 0;
+        //for loop to read the full_name letter-by-letter
+        for (int i = 0; i < full_name.length(); ++i) {
+            char c = full_name[i];
+            //check if every single char is an alphabet with isalpha()
+            //if yes, increase the lettercount
+            if (!isalpha(c) && c != ' ') {
+                valid = false;
+                break;
+            }
+            if (isalpha(c)) 
+                letterCount++;
+        }
+
+        //display error message if full_name contains non-alphabet and length<5
+        if (!valid || letterCount < 5) {
+            cout << "_______________________________________________\n";
+            cout << "| ERROR! INVALID NAME                         |\n";
+            cout << "|_____________________________________________|\n";
+            continue;
+        }
+        break;
+    }
+
+    //email validation
+    while (true) {
+        //get email from user
+        cout << "\nEnter your email (example: user@example.com): ";
+        getline(cin, email);
+        
+        bool hasAt = false, hasDot = false;
+        //for loop to read the email letter-by-letter
+        //check if the email contains @ and .
+        for (int i = 0; i < email.length(); ++i) {
+            char c = email[i];
+            if (c == '@') hasAt = true;
+            if (c == '.') hasDot = true;
+        }
+
+        //display error message if the format is incorrect(no @ && .)
+        if (!hasAt || !hasDot) {
+            cout << "____________________________________________________\n";
+            cout << "|Invalid email format! Must include @ and . symbol |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
+        //call function emailExist() in member linked list to check if email already exist
+        if (memberList.emailExists(email)) {
+            cout << "____________________________________________________\n";
+            cout << "|This email is already registered!                 |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+        break;
+    }
+
+    //password validation
+    while (true) {
+        //display password requirements
+        cout << "_______________________________________________\n";
+        cout << "| PASSWORD REQUIREMENTS                       |\n";
+        cout << "|_____________________________________________|\n";
+        cout << "|1. Password must be at least 8 characters    |\n";
+        cout << "|2. Password must have at least 1 uppercase   |\n";
+        cout << "|3. Password must have at least 1 lowercase   |\n";
+        cout << "|4. Password must have at least 1 number      |\n";
+        cout << "|_____________________________________________|\n";
+        cout << "\nEnter your new password (example: Xuanting123): ";
+        //get password from user
+        getline(cin, password);
+
+        //check if the password length >= 8
+        if (password.length() < 8) {
+            cout << "____________________________________________________\n";
+            cout << "|Password must be at least 8 characters!           |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
+        //for loop to check if password contains uppercase, lowercase, and number
+        bool hasUpper = false, hasLower = false, hasDigit = false;
+        for (int i = 0; i < password.length(); ++i) {
+            char c = password[i];
+            if (isupper(c)) hasUpper = true;
+            if (islower(c)) hasLower = true;
+            if (isdigit(c)) hasDigit = true;
+        }
+
+        //display error message if password don't contain uppercase, lowercase OR number
+        if (!hasUpper) {
+            cout << "____________________________________________________\n";
+            cout << "|Password must have at least 1 uppercase!          |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+        if (!hasLower) {
+            cout << "____________________________________________________\n";
+            cout << "|Password must have at least 1 lowercase!          |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+        if (!hasDigit) {
+            cout << "____________________________________________________\n";
+            cout << "|Password must have at least 1 number!             |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+        
+        //ask user to confirm the entered password
+        cout << "\nConfirm your password: ";
+        getline(cin, confirm_password);
+
+        //check if the password and confirm_password match
+        if (confirm_password != password) {
+            cout << "____________________________________________________\n";
+            cout << "|Passwords do not match!                           |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+        break;
+    }
+
+    //contact validation
+    while (true) {
+        //get contact from user
+        cout << "\nEnter your contact number (example: 012-34567890): ";
+        getline(cin, contact);
+
+        //check if the phone front format is XXX- & contain the remaining XXXXXXX
+        if (contact.length() < 4 || contact[3] != '-') {
+            cout << "____________________________________________________\n";
+            cout << "|Invalid format! Example: 012-34567890             |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
+        //seperate the contact into 2 parts for validation
+        string part1 = "";
+        //add up the front part of the contact
+        for(int i=0;i<3;i++){
+            part1 += contact[i]; //01X
+        }
+
+        string part2 = "";
+        for (int i = 4; i < contact.length(); ++i) {
+            part2 += contact[i];
+        }
+
+        //check if phone number starts with 01X-XXXXXXX
+        if (!(part1[0] == '0' && part1[1] == '1')) {
+            cout << "____________________________________________________\n";
+            cout << "|Phone number must start with '01'!                |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
+        //combine part1(01X) with part2(-XXXXXXX)
+        //check if contact id pure digits
+        string combined = part1 + part2;
+        bool onlyDigits = true;
+        for (int i = 0; i < combined.length(); ++i) {
+            if (!isdigit(combined[i])) {
+                onlyDigits = false;
+                break;
+            }
+        }
+
+        //display error message if the phone number is not pure digits
+        if (!onlyDigits) {
+            cout << "____________________________________________________\n";
+            cout << "|Phone number cannot contain symbols (except '-')  |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
+        //display error message if the contact length id not 10 OR 11 (contain -)
+        if (combined.length() != 10 && combined.length() != 11) {
+            cout << "________________________________________________________\n";
+            cout << "|Phone number must be 10 or 11 digits (excluding '-')! |\n";
+            cout << "|______________________________________________________|\n";
+            continue;
+        }
+
+        break;
+    }
+
+    //create and append new member into member linked list
+    Member newMember(member_id, full_name, email, password, contact, status);
+    memberList.append(newMember);
+    //append new member data into member.txt as well
+    saveMember(newMember);
+
+    //update member_id.txt with the new member_id
+    ofstream idFile(MEMBERS_ID_FILE, ios::app);
+    if (idFile) {
+        idFile << member_id << "\n";
+        idFile.close();
+    }
+
+    //display message for successful registration and redirect to mainMenu()
+    cout << "Registration successful! Your Member ID: " << member_id << endl;
+    cout << "\nPress [ENTER] to return to login menu.";
+    cin.ignore();
+    clearScreen();
 }
 
 //Landing Page for the store system
@@ -408,7 +684,7 @@ void mainMenu() {
             cout << "\n===============================================================\n";
             cout << "                    Signing Up As Member...                    \n";
             cout << "===============================================================\n";
-            //signup();
+            signup();
         }
         else if (choice == "2") {
             clearScreen();
