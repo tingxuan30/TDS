@@ -13,9 +13,6 @@ const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
 
-// Function Prototype
-void mainMenu();
-
 // Structures
 // struct Node that can store any data type "T"
 template <typename T>
@@ -293,6 +290,10 @@ MemberLinkedList memberList;
 AdminLinkedList adminList;
 Member loggedInMember;
 Admin loggedInAdmin;
+
+// Function Prototype
+void mainMenu();
+void memberMenu(Member loggedInMember);
 
 // Helper functions
 void clearScreen() {
@@ -649,10 +650,149 @@ void signup() {
     }
 
     //display message for successful registration and redirect to mainMenu()
-    cout << "Registration successful! Your Member ID: " << member_id << endl;
+    cout << "________________________________________________________\n";
+    cout << "|Registration successful! Your Member ID: " << member_id << "        |\n";
+    cout << "|______________________________________________________|\n";
     cout << "\nPress [ENTER] to return to login menu.";
     cin.ignore();
     clearScreen();
+}
+
+//function to login to memberMenu using member account
+void login() {
+    //declare the required attributes (email & password)
+    string email, password;
+    bool hasAt = false, hasDot = false;
+    
+    do {
+        //get email from user
+        cout << "\nEnter your email, [R] to return to the main menu: ";
+        getline(cin, email);
+        
+        //return to mainMenu if user entered R
+        if (email == "R" || email == "r") {
+            clearScreen();
+            mainMenu();
+            return;
+        }
+        
+        //check if email is correct format (contains @ & .)
+        for (int i=0;i<email.length();i++) {
+            char c = email[i];
+            if (c == '@') hasAt = true;
+            if (c == '.') hasDot = true;
+        }
+        
+        //display error message if email format is incorrect
+        if (!hasAt || !hasDot) {
+            cout << "________________________________________________________\n";
+            cout << "|Invalid email format! Must include @ and . symbol     |\n";
+            cout << "|______________________________________________________|\n";
+        }
+    } while (!hasAt || !hasDot);
+    
+    //call function in member linked list to check if the email is registered
+    Member* member = memberList.findMemberByEmail(email);
+    //if email == null, the linear search reach till the end of linked list with
+    //no matching result (email is not registered)
+    if (member == nullptr) {
+        cout << "________________________________________________________\n";
+        cout << "|Email not found.                                      |\n";
+        cout << "|______________________________________________________|\n";
+        cout << "\nPress [ENTER] to return to Main Menu.";
+        cin.ignore();
+        clearScreen();
+        return;
+    }
+    
+    //if the email exists but the member's status is Inactive, display error message
+    if (member->status != "Active") {
+        cout << "________________________________________________________\n";
+        cout << "|Your account is inactive. Please contact admin.       |\n";
+        cout << "|______________________________________________________|\n";
+        cout << "\nPress [ENTER] to return to Main Menu.";
+        cin.ignore();
+        clearScreen();
+        return;
+    }
+
+    int attempts = 0;
+    string currentPassword;
+
+    //get password from user
+    cout << "\nEnter your password: ";
+    getline(cin, currentPassword);
+    
+    //user only gets 3 attemps to enter the correct password
+    while (attempts < 3) {
+        //login successful if the password match
+        if (currentPassword == member->password) {
+            cout << "________________________________________________________\n";
+            cout << "|Logged in Successfully!                               |\n";
+            cout << "|______________________________________________________|\n";
+            
+            //assign the loggedInMember
+            loggedInMember = *member;
+            cout << "\nPress [ENTER] to continue.";
+            cin.ignore();
+            
+            //call memberMenu and pass the loggedInMember data
+            memberMenu(loggedInMember);
+            return;
+        } else {
+            //if the password does not match, increase the attempt
+            //ask user to re-enter until max out
+            attempts++;
+            cout << "________________________________________________________\n";
+            cout << "|Incorrect password! Attempts left: " << 3 - attempts <<"                  |\n";
+            cout << "|______________________________________________________|\n";
+            if (attempts < 3) {
+                cout << "Please enter your password again: ";
+                getline(cin, currentPassword);
+            }
+        }
+    }
+    //display error message when attempt max-out & return to mainMenu()
+    cout << "________________________________________________________\n";
+    cout << "|Too many failed attempts. Login terminated.           |\n";
+    cout << "|______________________________________________________|\n";
+    cout << "\nPress [ENTER] to return to login menu.";
+    cin.ignore();
+    clearScreen();
+}
+
+//function to display memberMenu
+void memberMenu(Member loggedInMember) {
+    while (true) {
+        //display the memberMenu
+        clearScreen();
+        cout << "\n===============================================================\n";
+        cout << "                          WELCOME " << loggedInMember.full_name << endl;
+        cout << "===============================================================\n";
+        cout << "1. Browse Product\n";
+        cout << "2. View My Cart\n";
+        cout << "3. View Order History\n";
+        cout << "4. View My Profile\n";
+        cout << "5. Rate Our System\n";
+        cout << "6. Log Out\n";
+        cout << "===============================================================\n";
+            
+        //get choice from member
+        string choice;
+        cout << "Enter your choice: ";
+        getline(cin, choice);
+            
+        //if-else statement to determine the corresponding actions
+        if (choice == "6") {
+            clearScreen();
+            mainMenu();
+            return;
+        }
+        else {
+            cout << "Invalid choice! Press [ENTER] to retry.";
+            cin.get();
+        }
+    }
 }
 
 //Landing Page for the store system
@@ -691,7 +831,7 @@ void mainMenu() {
             cout << "\n===============================================================\n";
             cout << "                    Logging In As Member...                    \n";
             cout << "===============================================================\n";
-            //login();
+            login();
         }
         else if (choice == "3") {
             clearScreen();
