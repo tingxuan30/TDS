@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <cctype>
 using namespace std;
 
 // File paths
@@ -246,6 +247,23 @@ public:
         //close file after reading and appending
         file.close();
     }
+
+    //function to check if the email already exist while adding new admin
+    bool emailExists(const string& email) const {
+        //set the current to the head of linked list
+        Node<Admin>* current = head;
+
+        //while the current is not null
+        while (current != nullptr) {
+            //linear search
+            //return true when current email = registered email
+            if (current->data.email == email) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
     
     //function to find the admin by email
     Admin* findAdminByEmail(const string& email) {
@@ -277,9 +295,95 @@ void clearScreen() {
     system("cls");
 }
 
+// Function to get next member ID
+string getNextMemberId() {
+    //open member_id.txt
+    ifstream file(MEMBERS_ID_FILE);
+    string lastId;
+
+    //if the file is open, read line-by-line to get the latest member_id
+    if (file.is_open()) {
+        string line;
+        while (getline(file, line)) {
+            if (!line.empty()) lastId = line;
+        }
+        file.close();
+    //if unable to open file, create one and write U0001(first member_id)
+    } else {
+        ofstream createFile(MEMBERS_ID_FILE);
+        createFile << "U0001\n";
+        createFile.close();
+        return "U0001";
+    }
+
+    //create a new member_id by incrementing latest member_id (exp: U0001+1 = U0002)
+    if (!lastId.empty()) {
+        string letter = "U";
+        //initialize the numeric part of member_id as null
+        string numericPart = "";
+        //add up the numeric part of the lastest member_id
+        numericPart += lastId[1]; //0
+        numericPart += lastId[2]; //0
+        numericPart += lastId[3]; //0
+        numericPart += lastId[4]; //1
+
+        //convert the numeric part of the latest member_id into int
+        int num = stoi(numericPart);
+        if (num != -1) {
+            return letter + to_string(num + 1); // returns the new latest member_id
+        }
+    }
+    //return initial member_id if the latest member_id is null
+    return "U0001";
+}
+
+// Function to get next admin ID
+string getNextAdminId() {
+    //open admin_id.txt
+    ifstream file(ADMINS_ID_FILE);
+    string lastId;
+
+    //if the file is open, read line-by-line to get the latest admin_id
+    if (file.is_open()) {
+        string line;
+        while (getline(file, line)) {
+            if (!line.empty()) lastId = line;
+        }
+        file.close();
+    //if unable to open file, create one and write A0001(first admin_id)
+    } else {
+        ofstream createFile(ADMINS_ID_FILE);
+        createFile << "A0001\n";
+        createFile.close();
+        return "A0001";
+    }
+
+    //create a new admin_id by incrementing latest admin_id (exp: A0001+1 = A0002)
+    if (!lastId.empty()) {
+        //initialize the numeric part of admin_id as null
+        string letter = "A";
+        //add up the numeric part of the lastest admin_id
+        string numericPart = "";
+        numericPart += lastId[1]; //0
+        numericPart += lastId[2]; //0
+        numericPart += lastId[3]; //0
+        numericPart += lastId[4]; //1
+
+        //convert the numeric part of the latest admin_id into int
+        int num = stoi(numericPart);
+        if (num != -1) {
+            return letter + to_string(num + 1); // returns the new latest admin_id
+        }
+    }
+    //return initial admin_id if the latest admin_id is null
+    return "A0001";
+}
+
 //Landing Page for the store system
 void mainMenu() {
-    //should load linked list for admin and member data first
+    //load both members & admins linked list to get existing accounts' info
+    memberList.loadMembers();
+    adminList.loadAdmins();
 
     //display landing page interface
     while(true){
