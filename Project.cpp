@@ -12,6 +12,7 @@ const string MEMBERS_FILE = "member.txt";
 const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
+const string PRODUCT_FILE = "product.txt";
 
 // Structures
 // struct Node that can store any data type "T"
@@ -69,6 +70,29 @@ struct Admin {
         password = pass;
         contact = cont;
         position = pos;
+        status = stat;
+    }
+};
+
+// Structure to store product data
+struct Product {
+    string product_id;
+    string product_name;
+    string category;
+    double price;
+    int stock;
+    string description;
+    string status;
+
+    //Constructor to initialize product data
+    Product(string id = "", string name = "", string cat = "", double cost = 0.0,
+            int quantity = 0, string att1="", string att2="", string desc = "", string stat = "") {
+        product_id = id;
+        product_name = name;
+        category = cat;
+        price = cost;
+        stock = quantity;
+        description = desc;
         status = stat;
     }
 };
@@ -290,15 +314,177 @@ MemberLinkedList memberList;
 AdminLinkedList adminList;
 Member loggedInMember;
 Admin loggedInAdmin;
+Product* products = nullptr;
+int productCount = 0;
 
 // Function Prototype
 void mainMenu();
 void memberMenu(Member loggedInMember);
 void adminMenu(Admin loggedInAdmin);
+void filterProducts();
+void printWrappedText(const string& text);
 
 // Helper functions
+//function to refresh the screen
 void clearScreen() {
     system("cls");
+}
+
+//function to wrapped the product description
+void printWrappedText(const string& text) {
+    //each line should only display maximum 60 words
+ 	int lineLength = 60;
+    int count = 0;
+    for (int i = 0; i < text.length(); i++) {
+        cout << text[i];
+        count++;
+
+        // Wrap the product description by moving to a new line
+        if (count >= lineLength && text[i] == ' ') {
+            cout << '\n';
+            count = 0;
+        }
+    }
+    cout << endl;
+}
+
+//function to split and get the attributes from a line in txt files
+//line: A line of text from the txt file
+//parts: A string array to store the attributes
+//maxParts: maximum aattributes can be retrived
+int splitAttribute(const string& line, string* parts, int maxParts) {
+    //track total of attributes retrieved
+    int count = 0;
+    //determine whether the current text is inside the quotes
+    bool inQuotes = false;
+    //temporarily stores the current field
+    string current;
+
+    //read through each char until reach a "
+    for (int i = 0; i < line.size(); i++) {
+        char c = line[i];
+        if (c == '"') {
+            inQuotes = !inQuotes;
+        } 
+        //if it reach a "," seperate the text
+        else if (c == ',' && !inQuotes) {
+            if (count < maxParts) {
+                parts[count++] = current;//save current value
+                current.clear();//reset the current value
+            }
+            else {
+                break;
+            }
+        } 
+        else {
+            current += c;//if the char is not " OR , add to current
+        }
+    }
+    //save the remaining parts (if have)
+    if (count < maxParts) {
+        parts[count++] = current;
+    }
+    return count;
+}
+
+//function to remove quotes from a string
+string removeQuotes(const string& s) {
+
+    string trimmed="";
+
+    //check if string has at least two char and starts and ends with ""
+    if (s.length() >= 2 && s[0] == '"' && s[s.length() - 1] == '"') {
+        // Extract substring without first and last character
+        for(int i=1;i<s.length()-1;i++){
+            trimmed+=s[i];
+        }
+        return trimmed;
+    }
+    //if string does not have "" return the originals
+    else
+        return s;
+}
+
+//Quick Sort Algorithm to sort product data
+//function for swapping and determining pivot for quicksort
+int partitionProduct(Product* arr, int low, int high, const string& key) {
+    //select last element in the subarray as pivot
+    Product pivot = arr[high];
+    //record the smaller element border, start before the low element
+    int i = low - 1;
+
+    //looping from the low element to the last element before pivot
+    for (int j = low; j < high; j++) {
+        //store the comparison result
+        bool condition = false;
+
+        //compare with product_id
+        if (key == "product_id") {
+            condition = arr[j].product_id < pivot.product_id;
+        }
+
+        //if the current < pivot, increase i (smaller element boundary)
+        if (condition) {
+            i++;
+            //swap current element with element at boundary index
+            Product temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+    }
+    //place the pivot right after the smaller element boundary
+    Product temp = arr[i + 1];
+    arr[i + 1] = arr[high];
+    arr[high] = temp;
+    //return the partition index(where the pivot ended up)
+    return i + 1;
+}
+
+/*Main recursive quicksort function
+  ==============================================================
+    1. It gets the pivot for the array/subarray
+    2. Seperates the array into left(<pivot) & right(>pivot)
+    3. Sort both sides of the array by repeating 1-2
+*/
+void quickSortProduct(Product* arr, int low, int high, const string& key) {
+    if (low < high) {
+        //get the index of the pivot.
+        int pivot = partitionProduct(arr, low, high, key);
+        //sort the left side of the pivot
+        quickSortProduct(arr, low, pivot - 1, key);
+        //sort the right side of the pivot
+        quickSortProduct(arr, pivot + 1, high, key);
+    }
+}
+
+/*Binary Search Algorithm
+  ==============================================================
+    1. It returns a pointer to the founded Product in the array
+    2. arr is the Product array
+    3. low & high is the range of current subarray
+    4. target is the product_id the user's looking for
+    5. key is the field used to perform search (product_id)
+*/
+Product* binarySearchProduct(Product* arr, int first, int last, const string& target, const string& key) {
+    //loop while the first index <= last index
+    while (first <= last) {
+        //get the middle index
+        int mid = first + (last - first) / 2;
+        string current;
+
+        //get the value of the product_id at mid index
+        if (key == "product_id") {
+            current = arr[mid].product_id;
+        }
+        //if the mid value == target, return result(found)
+        if (current == target) return &arr[mid];
+        //if the mid value < target, loop again with F=M+1
+        else if (current < target) first = mid + 1;
+        //if the mid value > target, loop again with L=M-1
+        else last = mid - 1;
+    }
+    //return pointer to null if no result found
+    return nullptr;
 }
 
 // Function to get next member ID
@@ -479,31 +665,69 @@ void signup() {
         //get email from user
         cout << "\nEnter your email (example: user@example.com): ";
         getline(cin, email);
-        
-        bool hasAt = false, hasDot = false;
-        //for loop to read the email letter-by-letter
-        //check if the email contains @ and .
-        for (int i = 0; i < email.length(); ++i) {
-            char c = email[i];
-            if (c == '@') hasAt = true;
-            if (c == '.') hasDot = true;
+
+        //keep track for the position of @ and .
+        int atPosition = -1;
+        int dotPosition = -1;
+        int atCount = 0;
+
+        //read char by char for '@' and '.'
+        for (int i = 0; i < email.length(); i++) {
+            //add the count for @ if there's one and track the position
+            if (email[i] == '@') {
+                atCount++;
+                atPosition = i;
+            //track the . position (if there's one)
+            } else if (email[i] == '.' && atPosition != -1 && i > atPosition) {
+                dotPosition = i;
+            }
         }
 
-        //display error message if the format is incorrect(no @ && .)
-        if (!hasAt || !hasDot) {
+        bool valid = true;
+
+        //check for the format
+        if (email.length() < 5) 
+            valid = false; 
+            //too short (e.g w@m.c)
+        else if (atCount != 1) 
+            valid = false;  
+            //must have one & only one @ (e.g.loy@@mail.com)
+        else if (atPosition <= 0 || atPosition >= email.length() - 1) 
+            valid = false; 
+            //@ cannot be first/last (e.g. @gmail.com)
+        else if (dotPosition == -1 || dotPosition == atPosition + 1) 
+            valid = false; 
+            //must have . after @, but not right after (e.g. lll@.com)
+        else if (dotPosition >= email.length() - 1) 
+            valid = false; 
+            //. cannot be the last char (e.g. lll@gmail.)
+        else if (email[0] == '.' || email[email.length() - 1] == '.') 
+            valid = false; 
+            //cannot start/end with '.' (e.g. lll@gmai.com.)
+        
+        //. cannot stick together
+        for (int i = 0; i < email.length() - 1; ++i) {
+            if (email[i] == '.' && email[i + 1] == '.') {
+                valid = false;
+                break;
+            }
+        }
+
+        if (!valid) {
             cout << "____________________________________________________\n";
-            cout << "|Invalid email format! Must include @ and . symbol |\n";
+            cout << "|Invalid email format! Please enter a valid email. |\n";
             cout << "|__________________________________________________|\n";
             continue;
         }
 
-        //call function emailExist() in member linked list to check if email already exist
+        // call function emailExist() in member linked list to check if email already exists
         if (memberList.emailExists(email)) {
             cout << "____________________________________________________\n";
             cout << "|This email is already registered!                 |\n";
             cout << "|__________________________________________________|\n";
             continue;
         }
+
         break;
     }
 
