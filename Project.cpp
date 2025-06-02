@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <cctype>
+#include <stdexcept>
 using namespace std;
 
 // File paths
@@ -86,7 +87,7 @@ struct Product {
 
     //Constructor to initialize product data
     Product(string id = "", string name = "", string cat = "", double cost = 0.0,
-            int quantity = 0, string att1="", string att2="", string desc = "", string stat = "") {
+            int quantity = 0, string desc = "", string stat = "") {
         product_id = id;
         product_name = name;
         category = cat;
@@ -94,6 +95,18 @@ struct Product {
         stock = quantity;
         description = desc;
         status = stat;
+    }
+};
+
+// Structure to store attribute 2 of product data
+struct Attribute2{
+    string attribute_name;
+    double addUp;
+
+    //Constructor to initialize attribute2 data
+    Attribute2(string name = "", double cost = 0.0) {
+        attribute_name = name;
+        addUp = cost;
     }
 };
 
@@ -323,6 +336,10 @@ void memberMenu(Member loggedInMember);
 void adminMenu(Admin loggedInAdmin);
 void filterProducts();
 void printWrappedText(const string& text);
+void displayProduct(const Product& product);
+string getAttribute1(string category);
+Attribute2 getAttribute2(string category);
+
 
 // Helper functions
 //function to refresh the screen
@@ -1109,7 +1126,12 @@ void memberMenu(Member loggedInMember) {
         getline(cin, choice);
             
         //if-else statement to determine the corresponding actions
-        if (choice == "6") {
+        if (choice == "1") {
+            clearScreen();
+            filterProducts();
+            return;
+        }
+        else if (choice == "6") {
             clearScreen();
             mainMenu();
             return;
@@ -1118,6 +1140,621 @@ void memberMenu(Member loggedInMember) {
             cout << "Invalid choice! Press [ENTER] to retry.";
             cin.get();
         }
+    }
+}
+
+//function to load products from product.txt
+bool loadProducts() {
+	//open product.txt in read mode
+    ifstream file(PRODUCT_FILE);
+    //return false if unable to open file
+    if (!file) {
+        cout << "Error: Product file not found!" << endl;
+        return false;
+    }
+
+    //total up the number of products by counting the lines
+    productCount = 0;
+    string line;
+    while (getline(file, line)) {
+        if (!line.empty()) productCount++;
+    }
+    file.close();
+
+    //DMA to delete the existing product data
+    if (products) delete[] products;
+
+    //DMA to assign the new product data
+    products = new Product[productCount];
+
+    //open product.txt again to read data
+    ifstream openfile(PRODUCT_FILE);
+    //return false if unable to open file
+    if (!openfile) {
+        cout << "Error: Product file not found on second open!" << endl;
+        return false;
+    }
+
+    //read the product.txt line-by-line (not exceeding total of products)
+    int index = 0;
+    while (getline(openfile, line) && index < productCount) {
+        if (line.empty()) continue;
+
+        //split the line and get the attributes (id, name, category...)
+        string parts[7];
+        int fieldsFound = splitAttribute(line, parts, 7);
+        //skip the line if the attributes found exceeded the declared limit (7)
+        if (fieldsFound < 7) {
+            cout << "Warning: Line skipped because extracted fiels max out" << endl;
+            continue;
+        }
+
+        //remove the quotes of the string part-by-part (if have)
+        for (int i = 0; i < 7; i++) {
+            parts[i] = removeQuotes(parts[i]);
+        }
+
+        //assign the attributes to product struct
+        products[index].product_id = parts[0];
+        products[index].product_name = parts[1];
+        products[index].category = parts[2];
+        //error handling (try & catch) for invalid price & stock format
+        try {
+            products[index].price = stod(parts[3]);
+        } catch (...) {
+            cout << "Warning: Invalid price format in line: " << line << endl;
+            products[index].price = 0;
+        }
+        try {
+            products[index].stock = stoi(parts[4]);
+        } catch (...) {
+            cout << "Warning: Invalid stock format in line: " << line << endl;
+            products[index].stock = 0;
+        }
+        products[index].description = parts[5];
+        products[index].status = parts[6];
+
+        //move on to the next line
+        index++;
+    }
+    openfile.close();
+
+    //update productCount if some lines were skipped
+    productCount = index;
+
+    //sort products by product_id with quicksort
+    quickSortProduct(products, 0, productCount - 1, "product_id");
+    return true;
+}
+
+//function to filter the products according to category for the user
+void filterProducts() {
+    //return to Main Menu if unable to load products
+    if (!loadProducts()) {
+        cout << "Failed to load products." << endl;
+        cout << "Press [ENTER] to return to Main Menu.";
+        cin.ignore();
+        cin.get();
+        clearScreen();
+        mainMenu();
+        return;
+    }
+
+    //display the filter menu while able to load products
+    while (true) {
+        clearScreen();
+        cout << "===============================================================" << endl;
+        cout << "|                  WELCOME TO OUR PIZZA STORE!                |" << endl;
+        cout << "===============================================================" << endl;
+        cout << "| Select a category:                                          |" << endl;
+        cout << "| 1. Pizza                                                    |" << endl;
+        cout << "| 2. Side                                                     |" << endl;
+        cout << "| 3. Beverage                                                 |" << endl;
+        cout << "| 4. Back to Main Menu                                        |" << endl;
+        cout << "===============================================================" << endl;
+
+        //get choice from user
+        string choiceString;
+        cout << "Enter your choice : ";
+        getline(cin,choiceString);
+        
+        //convert the choice to int
+        int choice = stoi(choiceString);
+
+        //declare a string to store the category names
+        string categories[] = {"Pizza", "Side", "Beverage"};
+
+        //ask user to re-enter when the choice is beyond stated category number
+        if (choice < 1 || choice > 4) {
+            cout << "Invalid choice. Press [ENTER] to retry.";
+            cin.get();
+            filterProducts();
+        }
+        //return to member menu when user entered 4
+        else if (choice == 4) {
+            clearScreen();
+            memberMenu(loggedInMember);
+            return;
+        }
+
+        //get the selected category from the category string array
+        string selectedCategory = categories[choice - 1];
+
+        //display products under the selected category
+        while (true) {
+            clearScreen();
+            cout << "Products in Category: " << selectedCategory << endl;
+            loadProducts();
+            
+            //linear search to look for the product according to category
+            bool found = false;
+            for (int i = 0; i < productCount; i++) {
+                if (products[i].category == selectedCategory && products[i].status == "Active") {
+                    displayProduct(products[i]);
+                    found = true;
+                }
+            }
+
+            //display error message if no products were found
+            if (!found) {
+                cout << "\nNo available products found in '" << selectedCategory << "' category." << endl;
+            }
+
+            //display the available operations for user
+            cout << "\n-----------------------------------------------------------------" << endl;
+            cout << " _________________________________" << endl;
+            cout << "| Options:                        |" << endl;
+            cout << "| Enter Product ID to add to cart |" << endl;
+            cout << "| [C] View Cart                   |" << endl;
+            cout << "| [B] Back to Category Selection  |" << endl;
+            cout << "| [M] Back to Main Menu           |" << endl;
+            cout << "|_________________________________|" << endl;
+
+            //get selection from user
+            string selection;
+            cout << "\nEnter your choice: ";
+            cin >> selection;
+
+            //display cart if user entered C
+            if (selection == "C" || selection == "c") {
+            	cin.ignore();
+                //displayCart(loggedInMember);
+                continue;
+            //return to category selection if user entered R    
+            } else if (selection == "B" || selection == "b") {
+            	cin.ignore();
+                break;
+            //return to Main Menu is user entered M
+            } else if (selection == "M" || selection == "m") {
+                clearScreen();
+                cin.ignore();
+                memberMenu(loggedInMember);
+                return;
+            }
+
+            //call binary search algorithm to search for product based on product_id entered
+            string product_id = selection;
+            Product* product = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
+
+            //display error message if no matching product found
+            if (!product) {
+                cout << "Product with ID '" << product_id << "' not found." << endl;
+                cout << "Press [ENTER] to continue.";
+                cin.ignore();
+                cin.get();
+                continue;
+            }
+
+            //if product found, check if the status is "Inactive"
+            if (product->status == "Inactive") {
+                cout << "\nThis product is currently unavailable." << endl;
+                cout << "Press [ENTER] to continue.";
+                cin.ignore();
+                cin.get();
+                continue;
+            }
+
+            //if product found, check if the stock is available
+            if (product->stock <= 0) {
+                cout << "\nSorry, this product is out of stock!" << endl;
+                cout << "Press [ENTER] to continue.";
+                cin.ignore();
+                cin.get();
+                continue;
+            }
+
+            //display the selected product name
+            cout << "Selecting product: " << product->product_name << endl;
+
+            //call function getattribute1 to get first attribute based on category
+            string attribute1 = getAttribute1(selectedCategory);
+            //call function getattribute2 to get second attribute & add-up price based on category
+            Attribute2 obj = getAttribute2(selectedCategory);
+
+            //get the quantity from the user
+            while (true) {
+                //display available stock
+                cout << "\nEnter quantity (available: " << product->stock << "): ";
+                string quantity;
+                cin >> quantity;
+
+                //check if the entered quantity is number
+                bool isNumber = true;
+                for (int i=0;i<quantity.length();i++) {
+                    char c = quantity[i];
+                    if (!isdigit(c)) {
+                        isNumber = false;
+                        break;
+                    }
+                }
+                //ask user to enter again if its not a number
+                if (!isNumber) {
+                    cout << "Invalid input. Please enter a number." << endl;
+                    continue;
+                }
+
+                //ask user to retry if the quantity is 0 OR exceed stock
+                int qty = stoi(quantity);
+                if (qty <= 0) {
+                    cout << "Quantity must be positive." << endl;
+                } else if (qty > product->stock) {
+                    cout << "Not enough stock available." << endl;
+                } else {
+                    //add to cart if the product is found active and quantity is valid
+                    //addToCart(product_id, qty, attribute1, obj);
+                    cout << "Press [ENTER] to continue.";
+                    cin.ignore();
+                    cin.get();
+                    break;
+                }
+            }
+        }
+    }
+}
+
+//function to get attribute 1 of the selected product
+string getAttribute1(string category){
+    string attribute1;
+    string choice;
+    cin.ignore();
+
+    //if the category is "Pizza", get the preferred crust
+    if(category=="Pizza"){
+        //display available crust
+        cout << "\n__________________________" << endl;
+        cout << "| Available Crust:       |" << endl;
+        cout << "| 1. Cheesy Crust        |" << endl;
+        cout << "| 2. Crackin Thin        |" << endl;
+        cout << "| 3. Pan                 |" << endl;
+        cout << "| 4. Stuffed Crust       |" << endl;
+        cout << "|________________________|" << endl;
+        //declare a string array to store the available crust
+        string crust[] = {"Cheesy Crust", "Crackin Thin", "Pan", "Stuffed Crust"};
+        while(true){
+            //get choice from user
+            cout << "Select crust: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <= 4){
+                        //retrieve the crust based on user input
+                        attribute1 = crust[selection-1];
+                        return attribute1;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+    //if the category is "Beverage", get the preferred serving temperature
+    else if(category=="Beverage"){
+        //display available serving temperature
+        cout << "\n__________________________" << endl;
+        cout << "| Serving Temperature:   |" << endl;
+        cout << "| 1. Cold                |" << endl;
+        cout << "| 2. Room Temperature    |" << endl;
+        cout << "|________________________|" << endl;
+        //declare a string array to store the available serving temperature
+        string temperature[] = {"Cold", "Room Temperature"};
+        while(true){
+            //get choice from user
+            cout << "Select serving temperature: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <= 2){
+                        //retrieve the serving temperature based on user input
+                        attribute1 = temperature[selection-1];
+                        return attribute1;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+    //if the category is "Side", get the preferred sauce
+    else if(category=="Side"){
+        //display available sauce
+        cout << "\n_____________________________" << endl;
+        cout << "| Available Sauce:          |" << endl;
+        cout << "| 1. Garlic Aioli Dip       |" << endl;
+        cout << "| 2. Spicy Nacho Cheese Dip |" << endl;
+        cout << "|___________________________|" << endl;
+        //declare a string array to store the available sauce
+        string sauce[] = {"Garlic Aioli Dip", "Spicy Nacho Cheese Dip"};
+        while(true){
+            //get choice from user
+            cout << "Select sauce: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <= 2){
+                        //retrieve the sauce based on user input
+                        attribute1 = sauce[selection-1];
+                        return attribute1;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+//function to get attribute 2 of the selected product
+Attribute2 getAttribute2(string category){
+    Attribute2 obj;
+    string choice;
+
+    //if the category is "Pizza", get the preferred size
+    if(category=="Pizza"){
+        //display available size
+        cout << "\n___________________________________" << endl;
+        cout << "| Available Size:                   |" << endl;
+        cout << "| 1. Personal :  6 inches           |" << endl;
+        cout << "| 2. Regular  :  9 inches (+ RM 12) |" << endl;
+        cout << "| 3. Large    : 12 inches (+ RM 24) |" << endl;
+        cout << "|___________________________________|" << endl;
+        //declare a string array to store the available size
+        string size[] = {"Personal", "Regular", "Large"};
+        //declare a double array to store the add-up price
+        double addPrice[] = {0.00, 12.00, 24.00};
+        while(true){
+            //get choice from user
+            cout << "Select size: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    //retrieve the size based on user input
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <=3){
+                        obj.attribute_name = size[selection-1];
+                        obj.addUp = addPrice[selection-1];
+                        return obj;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+    //if the category is "Beverage", get the preferred size
+    else if(category=="Beverage"){
+        //display available size
+        cout << "\n_____________________________" << endl;
+        cout << "| Available Size:             |" << endl;
+        cout << "| 1. Tin    : 325 ml          |" << endl;
+        cout << "| 2. Bottle : 750 ml (+ RM 2) |" << endl;
+        cout << "|_____________________________|" << endl;
+        //declare a string array to store the available size 
+        string size[] = {"Tin", "Bottle"};
+        //declare a double array to store the add-up price
+        double addPrice[] = {0.00, 2.00};
+        while(true){
+            //get choice from user
+            cout << "Select size: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    //retrieve the size based on user input
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <=2){
+                        obj.attribute_name = size[selection-1];
+                        obj.addUp = addPrice[selection-1];
+                        return obj;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+    //if the category is "Side", get the preferred size
+    else if(category=="Side"){
+        //display available size
+        cout << "\n_____________________" << endl;
+        cout << "| Available Size:     |" << endl;
+        cout << "| 1. 1 pax            |" << endl;
+        cout << "| 2. 2 pax (+ RM  5)  |" << endl;
+        cout << "| 3. 4 pax (+ RM 15)  |" << endl;
+        cout << "|_____________________|" << endl;
+        //declare a string array to store the available size 
+        string size[] = {"1 pax", "2 pax", "4 pax"};
+        //declare a double array to store the add-up price
+        double addPrice[] = {0.00, 5.00, 15.00};
+        while(true){
+            //get choice from user
+            cout << "Select size: ";
+            getline(cin,choice);
+            
+            //check if the entered choice is number
+            bool isNumber = true;
+            for (int i=0;i<choice.length();i++) {
+                char c = choice[i];
+                if (!isdigit(c)) {
+                    isNumber = false;
+                    break;
+                }
+            }
+            //ask user to enter again if its not a number
+            if (!isNumber) {
+                cout << "Invalid choice. Please try again." << endl;
+                continue;
+            }
+            else{
+                try{
+                    //retrieve the size based on user input
+                    int selection = stoi(choice);
+                    if(selection >=1 && selection <=3){
+                        obj.attribute_name = size[selection-1];
+                        obj.addUp = addPrice[selection-1];
+                        return obj;
+                    }
+                    else{
+                        cout << "Invalid choice. Please try again." << endl;
+                        continue;
+                    }
+                }
+                catch (const invalid_argument& e){
+                    cout << "Invalid choice. Please try again." << endl;
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+// Function to display a product for member module
+void displayProduct(const Product& product) {
+    if (product.status == "Active") {
+        cout << "----------------------------------------------------------------------" << endl;
+        cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
+        cout << "----------------------------------------------------------------------" << endl;
+        cout << "| Name      : " << left << setw(55) << product.product_name << "|" << endl;
+        cout << "| Category  : " << left << setw(55) << product.category << "|" << endl;
+        cout << "| Price     : RM " << left << setw(52) << fixed << setprecision(2) << product.price << "|" << endl;
+
+        //display error message if product is out of stock
+        if (product.stock <= 0) {
+            cout << "| WARNING   : SORRY! THIS PRODUCT IS CURRENTLY OUT OF STOCK!         |" << endl;
+        //if stock available, proceed to display it
+        } else {
+            cout << "| Stock     : " << left << setw(55) << product.stock << "|" << endl;
+            cout << "|                                                                    |" << endl;
+            cout << "|";
+            printWrappedText(product.description);
+        }
+        cout << "----------------------------------------------------------------------" << endl;
     }
 }
 
