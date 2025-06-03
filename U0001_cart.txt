@@ -1,0 +1,5 @@
+121,Sweet N Sour Mushroom,34.90,Pan,Large,24.00,10,589.00
+133,Mineral Water,3.00,Cold,Bottle,2.00,2,10.00
+152,Snackbox 2,24.90,Garlic Aioli Dip,2 pax,5.00,1,29.90
+121,Sweet N Sour Mushroom,34.90,Cheesy Crust,Personal,0.00,5,174.50
+121,Sweet N Sour Mushroom,34.90,Crackin Thin,Regular,12.00,2,93.80
