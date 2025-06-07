@@ -255,6 +255,7 @@ Attribute2 getAttribute2(string category);
 void addToCart(const string& product_id, int quantity, string attribute1, Attribute2 obj);
 void displayCart(Member loggedInMember);
 void deleteCart(CartItem*& cart, int& cartSize);
+void editCart(CartItem*& cart, int& cartSize);
 void clearScreen() {
     system("cls");
 }
@@ -1533,7 +1534,7 @@ void displayCart(Member loggedInMember) {
 	        deleteCart(cart, cartSize);
 	        break;
 	    } else if (choice == "2") {
-	        // editCart(cart, cartSize);
+	        editCart(cart, cartSize);
 	        break;
 	    } else if (choice == "3") {
 	        // proceedToPayment(cart, cartSize);
@@ -1705,6 +1706,156 @@ void deleteCart(CartItem*& cart, int& cartSize) {
             cout << "\nError saving cart changes!" << endl;
         }
         cout << "\nPress [ENTER] to continue.";
+        cin.ignore();
+        break;
+    }
+}
+void editCart(CartItem*& cart, int& cartSize) {
+    while (true) {
+        cout << "\nEnter the item number to edit (1-" << cartSize << ") or [0] to cancel: ";  
+        string choiceStr;
+        getline(cin, choiceStr);
+        bool isValid = isAllDigits(choiceStr);
+        if (!isValid) {
+        	cout << "\n_______________________________________________\n";
+            cout << "| Invalid input! Please enter a number.       |\n";
+            cout << "|_____________________________________________|\n";
+            continue;
+        }
+        int choice = stoi(choiceStr);
+        if (choice == 0) {
+            return; 
+        }
+        if (choice < 1 || choice > cartSize) {
+        	cout << "\n_______________________________________________\n";
+            cout << "| Invalid item number! Please try again.      |\n";
+            cout << "|_____________________________________________|\n";
+            continue;
+        }
+        CartItem& item = cart[choice-1];
+        Product* product = binarySearchProduct(products, 0, productCount - 1, item.product_id, "product_id");
+        if (!product) {
+            cout << "\n_______________________________________________\n";
+            cout << "| ERROR: PRODUCT NOT FOUND IN INVENTORY       |\n";
+            cout << "|_____________________________________________|\n";
+            cin.ignore();
+            continue;
+        }
+        while (true) {
+            cout << "\nEditing: " << item.product_name << endl;
+            cout << "Current quantity: " << item.quantity << endl;
+            cout << "Current attributes: " << item.attribute1 << ", " << item.attribute2 << endl;
+            cout << "Available stock: " << product->stock + item.quantity << endl;
+            cout << "\n_______________________________________________\n";
+            cout << "| What would you like to edit?                |\n";
+            cout << "| 1. Quantity                                 |\n";      
+            cout << "| 2. Attributes                               |\n";
+            cout << "| 3. Both quantity and attributes             |\n";
+            cout << "| 0. Cancel                                   |\n";
+            cout << "|_____________________________________________|\n";
+            string editChoiceStr;
+            cout << "Enter your choice: ";
+            getline(cin, editChoiceStr);
+            if (!isAllDigits(editChoiceStr)) {
+                cout << "\n_______________________________________________\n";
+		        cout << "| Invalid input! Please enter a number.       |\n";
+	            cout << "|_____________________________________________|\n";
+                continue;
+            }
+            int editChoice = stoi(editChoiceStr);
+            if (editChoice == 0) {
+                break;
+            }
+            bool editQuantity = (editChoice == 1 || editChoice == 3);
+            bool editAttributes = (editChoice == 2 || editChoice == 3);
+            int newQty = item.quantity;
+            string newAttribute1 = item.attribute1;
+            Attribute2 newAttribute2;
+            newAttribute2.attribute_name = item.attribute2;
+            newAttribute2.addUp = item.addUp;
+            if (editQuantity) {
+                while (true) {
+                    cout << "\nCurrent quantity: " << item.quantity << endl;
+                    cout << "Available stock: " << product->stock + item.quantity << endl;
+                    cout << "Enter new quantity (0 to remove item): ";
+                    string qtyStr;
+                    getline(cin, qtyStr);
+                    if (!isAllDigits(qtyStr)) {
+                        cout << "Invalid quantity! Please enter a number." << endl;
+                        cout << "Press [ENTER] to continue.";
+                        cin.ignore();
+                        continue;
+                    }
+                    newQty = stoi(qtyStr);
+                    if (newQty < 0) {
+                        cout << "Quantity cannot be negative!" << endl;
+                        cout << "Press [ENTER] to continue.";
+                        cin.ignore();
+                        continue;
+                    }
+                    if (newQty == 0) {
+                        product->stock += item.quantity; 
+                        CartItem* newCart = new CartItem[cartSize - 1];
+                        int newIndex = 0;
+                        for (int i = 0; i < cartSize; i++) {
+                            if (i != choice - 1) {
+                                newCart[newIndex++] = cart[i];
+                            }
+                        }
+                        delete[] cart;
+                        cart = newCart;
+                        cartSize--;
+                        cout << "Item removed from cart." << endl;
+                        if (saveCart(cart, cartSize, loggedInMember.member_id)) {
+                            cout << "Cart updated successfully!" << endl;
+                        } else {
+                            cout << "Error saving cart changes!" << endl;
+                        }
+                        
+                        cout << "Press [ENTER] to continue.";
+                        cin.ignore();
+                        return;
+                    }
+                    if (newQty > product->stock + item.quantity) {
+                        cout << "Not enough stock available! Maximum available: " 
+                             << product->stock + item.quantity << endl;
+                        cout << "Press [ENTER] to continue.";
+                        cin.ignore();
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (editAttributes) {
+                cout << "\nEditing attributes for: " << item.product_name << endl;
+                cout << "Current attributes: " << item.attribute1 << ", " << item.attribute2 << endl;
+                newAttribute1 = getAttribute1(product->category);
+                Attribute2 tempAttr2 = getAttribute2(product->category);
+                newAttribute2.attribute_name = tempAttr2.attribute_name;
+                newAttribute2.addUp = tempAttr2.addUp;
+            }
+            if (editQuantity) {
+                product->stock += item.quantity; 
+                product->stock -= newQty;     
+            }
+            item.quantity = newQty;
+            if (editAttributes) {
+                item.attribute1 = newAttribute1;
+                item.attribute2 = newAttribute2.attribute_name;
+                item.addUp = newAttribute2.addUp;
+            }
+            item.total = (item.price + item.addUp) * newQty;
+            
+            cout << "Item updated successfully!" << endl;
+            break;
+        }
+        if (saveCart(cart, cartSize, loggedInMember.member_id)) {
+            cout << "Cart updated successfully!" << endl;
+        } else {
+            cout << "Error saving cart changes!" << endl;
+        }
+        
+        cout << "Press [ENTER] to continue.";
         cin.ignore();
         break;
     }
