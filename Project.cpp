@@ -254,6 +254,7 @@ string getAttribute1(string category);
 Attribute2 getAttribute2(string category);
 void addToCart(const string& product_id, int quantity, string attribute1, Attribute2 obj);
 void displayCart(Member loggedInMember);
+void deleteCart(CartItem*& cart, int& cartSize);
 void clearScreen() {
     system("cls");
 }
@@ -1529,7 +1530,7 @@ void displayCart(Member loggedInMember) {
 	    cout << "\nEnter your choice: ";
 	    getline(cin, choice);
 	    if (choice == "1") {
-	        // deleteCart(cart, cartSize);
+	        deleteCart(cart, cartSize);
 	        break;
 	    } else if (choice == "2") {
 	        // editCart(cart, cartSize);
@@ -1649,6 +1650,67 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
         cout << "\nError: Could not save changes." << endl;
     }
     delete[] cart;
+}
+bool isAllDigits(const string& str) {
+    int len = str.length();
+    for (int i = 0; i < len; ++i) {
+        if (!isdigit(str[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+void deleteCart(CartItem*& cart, int& cartSize) {
+    if (cartSize == 0) {
+        cout << "\nYour cart is already empty!" << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        return;
+    }
+    while (true) {
+        cout << "\nEnter the item number to delete (1-" << cartSize << ") or [0] to cancel: ";
+        string choiceStr;
+        getline(cin, choiceStr);
+        bool isValid = isAllDigits(choiceStr);
+        if (!isValid) {
+        	cout << "\n________________________________________________________\n";
+			cout << "|Invalid input! Please enter a number.                 |\n";
+			cout << "|______________________________________________________|\n";
+            continue;
+        }
+        int choice = stoi(choiceStr);
+        if (choice == 0) {
+            return; 
+        }
+        if (choice < 1 || choice > cartSize) {
+        	cout << "\n________________________________________________________\n";
+			cout << "|Invalid item number! Please try again.                |\n";
+			cout << "|______________________________________________________|\n";
+            continue;
+        }
+        Product* product = binarySearchProduct(products, 0, productCount - 1, cart[choice-1].product_id, "product_id");
+        if (product) {
+            product->stock += cart[choice-1].quantity;
+        }
+        CartItem* newCart = new CartItem[cartSize - 1];
+        int newIndex = 0;
+        for (int i = 0; i < cartSize; i++) {
+            if (i != choice - 1) {
+                newCart[newIndex++] = cart[i];
+            }
+        }
+        delete[] cart;
+        cart = newCart;
+        cartSize--;
+        if (saveCart(cart, cartSize, loggedInMember.member_id)) {
+            cout << "\nItem successfully removed from cart!" << endl;
+        } else {
+            cout << "\nError saving cart changes!" << endl;
+        }
+        cout << "\nPress [ENTER] to continue.";
+        cin.ignore();
+        break;
+    }
 }
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
