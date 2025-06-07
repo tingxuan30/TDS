@@ -1653,6 +1653,9 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
 }
 bool isAllDigits(const string& str) {
     int len = str.length();
+    if (len == 0) {
+        return false; 
+    }
     for (int i = 0; i < len; ++i) {
         if (!isdigit(str[i])) {
             return false;
@@ -1661,12 +1664,6 @@ bool isAllDigits(const string& str) {
     return true;
 }
 void deleteCart(CartItem*& cart, int& cartSize) {
-    if (cartSize == 0) {
-        cout << "\nYour cart is already empty!" << endl;
-        cout << "Press [ENTER] to continue.";
-        cin.ignore();
-        return;
-    }
     while (true) {
         cout << "\nEnter the item number to delete (1-" << cartSize << ") or [0] to cancel: ";
         string choiceStr;
@@ -1690,7 +1687,7 @@ void deleteCart(CartItem*& cart, int& cartSize) {
         }
         Product* product = binarySearchProduct(products, 0, productCount - 1, cart[choice-1].product_id, "product_id");
         if (product) {
-            product->stock += cart[choice-1].quantity;
+            product->stock += cart[choice-1].quantity; 
         }
         CartItem* newCart = new CartItem[cartSize - 1];
         int newIndex = 0;
