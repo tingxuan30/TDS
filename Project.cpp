@@ -968,11 +968,11 @@ void filterProducts() {
             cout << "\nEnter your choice: ";
             cin >> selection;
             if (selection == "C" || selection == "c") {
-            	cin.ignore();
+                cin.ignore();
                 displayCart(loggedInMember);
                 continue;  
             } else if (selection == "B" || selection == "b") {
-            	cin.ignore();
+                cin.ignore();
                 break;
             } else if (selection == "M" || selection == "m") {
                 clearScreen();
@@ -984,6 +984,13 @@ void filterProducts() {
             Product* product = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
             if (!product) {
                 cout << "Product with ID '" << product_id << "' not found." << endl;
+                cout << "Press [ENTER] to continue.";
+                cin.ignore();
+                cin.get();
+                continue;
+            } else if (product->category != selectedCategory) {
+                cout << "Product with ID '" << product_id << "' not found in '" 
+                     << selectedCategory << "' category." << endl;
                 cout << "Press [ENTER] to continue.";
                 cin.ignore();
                 cin.get();
