@@ -2119,6 +2119,189 @@ void clearCartFile(const string& member_id) {
     ofstream file(cartFile);
     file.close();
 }
+void viewMemberList(const string& statusFilter) {
+    memberList.loadMembers();
+    Node<Member>* current = memberList.getHead();
+    clearScreen();
+    if (statusFilter == "Active") {
+        cout << "===========================================================================\n";
+        cout << "|                         ACTIVE MEMBER LIST                              |\n";      
+    } else {
+        cout << "===========================================================================\n";
+        cout << "|                          INACTIVE MEMBER LIST                           |\n";      
+    }
+    cout << "===========================================================================\n"; 
+    bool foundAny = false;
+    while (current != nullptr) {
+        if (current->data.status == statusFilter) {
+            foundAny = true;
+            cout << "| Member ID         : " << left << setw(52) << current->data.member_id << "|\n";
+            cout << "| Name              : " << left << setw(52) << current->data.full_name << "|\n";
+            cout << "| Email             : " << left << setw(52) << current->data.email << "|\n";
+            cout << "| Contact           : " << left << setw(52) << current->data.contact << "|\n";
+            cout << "---------------------------------------------------------------------------\n";
+        }
+        current = current->next;
+    }
+    if (!foundAny) {
+        cout << "|                                                                         |\n";
+        cout << "|                      No " << left << setw(48) << (statusFilter + " members found.") << "|\n";
+        cout << "|                                                                         |\n";
+        cout << "---------------------------------------------------------------------------\n";
+		cout << "\nPress [ENTER] to return.";
+        cin.ignore();
+        clearScreen();
+        return; 
+	}
+    while (true) {
+        string searchChoice;
+        cout << "\nDo you want to search member by ID? (Y/N to return): ";
+        getline(cin, searchChoice);
+        if (searchChoice == "N" || searchChoice == "n") {
+            return;
+        } else if (searchChoice == "Y" || searchChoice == "y") {
+            string searchId;
+            cout << "\nEnter Member ID to search (or 'C' to cancel): ";
+            getline(cin, searchId);
+            if (searchId == "C" || searchId == "c") {
+                continue;
+            }
+            current = memberList.getHead();
+            bool found = false;
+            while (current != nullptr) {
+                if (current->data.member_id == searchId && current->data.status == statusFilter) {
+                    clearScreen();
+                    cout << "===========================================================================\n";
+                    cout << "|                                MEMBER DETAILS                           |\n";
+                    cout << "===========================================================================\n";
+                    cout << "| Member ID         : " << left << setw(52) << current->data.member_id << "|\n";
+                    cout << "| Name              : " << left << setw(52) << current->data.full_name << "|\n";
+                    cout << "| Email             : " << left << setw(52) << current->data.email << "|\n";
+                    cout << "| Contact           : " << left << setw(52) << current->data.contact << "|\n";
+                    cout << "| Status            : " << left << setw(52) << current->data.status << "|\n";
+                    cout << "===========================================================================\n";
+                    found = true;
+                    break;
+                }
+                current = current->next;
+            }
+            if (!found) {
+                cout << "Member with ID " << searchId << " not found in " << statusFilter << " members.\n";
+            }
+            cout << "\nPress [ENTER] to continue.";
+            cin.ignore();
+            clearScreen();
+            break;
+        } else {
+            cout << "Invalid choice. Please enter Y (Yes), or N (No).\n";
+        }
+    }
+}
+void changeMemberStatus() {
+    memberList.loadMembers();
+    clearScreen();
+    cout << "===========================================================================\n";
+    cout << "|                                 MEMBER LIST                             |\n";
+    cout << "===========================================================================\n";
+    cout << "| ID                 | Name                          | Status             |\n";
+    cout << "===========================================================================\n";
+    Node<Member>* current = memberList.getHead();
+    while (current != nullptr) {
+        cout << "| " << left << setw(18) << current->data.member_id << " | "
+             << left << setw(29) << current->data.full_name << " | "
+             << left << setw(18) << current->data.status << " |\n";
+        current = current->next;
+    }
+    cout << "===========================================================================\n";
+    string chosenId;
+    while (true) {
+        cout << "\nEnter Member ID to change status (or 'C' to cancel): ";
+        getline(cin, chosenId);
+        if (chosenId == "C" || chosenId == "c") {
+            return;
+        }
+        current = memberList.getHead();
+        bool found = false;
+        while (current != nullptr) {
+            if (current->data.member_id == chosenId) {
+                found = true;
+                break;
+            }
+            current = current->next;
+        }
+        if (!found) {
+            cout << "\nError: Member ID '" << chosenId << "' not found. Please try again.\n";
+            continue;
+        }
+        break;
+    }
+    current = memberList.getHead();
+    while (current != nullptr) {
+        if (current->data.member_id == chosenId) {
+        	if (current->data.status == "Active")
+        		current->data.status =  "Inactive";
+        	else if (current->data.status == "Inactive") 
+            	current->data.status =  "Active";
+            break;
+        }
+        current = current->next;
+    }
+    ofstream file(MEMBERS_FILE);
+    if (file) {
+        current = memberList.getHead();
+        bool firstMember = true;
+        while (current != nullptr) {
+            if (!firstMember) {
+                file << "\n";
+            }
+            file << current->data.member_id << "\n"
+                 << current->data.full_name << "\n"
+                 << current->data.email << "\n"
+                 << current->data.password << "\n"
+                 << current->data.contact << "\n"
+                 << current->data.status;
+            firstMember = false;
+            current = current->next;
+        }
+        file.close();
+    }
+    cout << "\nMember " << chosenId << " status changed successfully.\n";
+    cout << "\nPress [ENTER] to continue.";
+    cin.ignore();
+}
+void manageMember() {
+    while (true) {
+        clearScreen();
+        cout << "===========================================================================\n";
+        cout << "|                            MANAGE MEMBER LIST                           |\n";      
+        cout << "===========================================================================\n";
+        cout << "| [1] View Active Members                                                 |\n";
+        cout << "| [2] View Inactive Members                                               |\n";
+        cout << "| [3] Change Member Status                                                |\n";
+        cout << "| [4] Return to Admin Menu                                                |\n";
+        cout << "===========================================================================\n";
+        string choice;
+        cout << "Enter your choice: ";
+        getline(cin, choice);
+        
+        if (choice == "1") {
+            viewMemberList("Active");
+        }
+        else if (choice == "2") {
+            viewMemberList("Inactive");
+        }
+        else if (choice == "3") {
+            changeMemberStatus();
+        }
+        else if (choice == "4") {
+            adminMenu(loggedInAdmin);
+        }
+        else {
+            cout << "Invalid choice, Press [ENTER] to try again.";
+            cin.ignore();
+        }
+    }
+}
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
         clearScreen();
@@ -2137,7 +2320,12 @@ void adminMenu(Admin loggedInAdmin) {
         string choice;
         cout << "Enter your choice: ";
         getline(cin, choice);
-        if(choice == "8") {
+		if(choice == "3") {
+            clearScreen();
+            manageMember();
+            return;
+        }
+        else if(choice == "8") {
             clearScreen();
             mainMenu();
             return;
