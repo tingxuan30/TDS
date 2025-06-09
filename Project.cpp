@@ -1763,7 +1763,7 @@ void editCart(CartItem*& cart, int& cartSize) {
             cout << "\nEditing: " << item.product_name << endl;
             cout << "Current quantity: " << item.quantity << endl;
             cout << "Current attributes: " << item.attribute1 << ", " << item.attribute2 << endl;
-            cout << "Available stock: " << product->stock + item.quantity << endl;
+            cout << "Available stock: " << product->stock << endl;
             cout << "\n_______________________________________________\n";
             cout << "| What would you like to edit?                |\n";
             cout << "| 1. Quantity                                 |\n";      
@@ -1794,7 +1794,7 @@ void editCart(CartItem*& cart, int& cartSize) {
             if (editQuantity) {
                 while (true) {
                     cout << "\nCurrent quantity: " << item.quantity << endl;
-                    cout << "Available stock: " << product->stock + item.quantity << endl;
+                    cout << "Available stock: " << product->stock << endl;
                     cout << "Enter new quantity (0 to remove item): ";
                     string qtyStr;
                     getline(cin, qtyStr);
@@ -1829,7 +1829,6 @@ void editCart(CartItem*& cart, int& cartSize) {
                         } else {
                             cout << "Error saving cart changes!" << endl;
                         }
-                        
                         cout << "Press [ENTER] to continue.";
                         cin.ignore();
                         return;
@@ -1853,9 +1852,12 @@ void editCart(CartItem*& cart, int& cartSize) {
                 newAttribute2.addUp = tempAttr2.addUp;
             }
             if (editQuantity) {
-                product->stock += item.quantity; 
-                product->stock -= newQty;     
-            }
+			    product->stock += item.quantity;
+			    if (newQty > 0) {
+			        product->stock -= newQty;
+			    }
+			    item.quantity = newQty;
+			}
             item.quantity = newQty;
             if (editAttributes) {
                 item.attribute1 = newAttribute1;
@@ -1872,7 +1874,6 @@ void editCart(CartItem*& cart, int& cartSize) {
         } else {
             cout << "Error saving cart changes!" << endl;
         }
-        
         cout << "Press [ENTER] to continue.";
         cin.ignore();
         break;
