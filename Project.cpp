@@ -264,6 +264,9 @@ void cashPayment(CartItem* cart, int cartSize, double totalPayment);
 bool isValidCardNumber(const string& cardNumber);
 bool isValidExpiryDate(const string& expiryDate);
 bool isValidCVV(const string& cvv);
+void recordPurchaseHistory(CartItem* cart, int cartSize, double total);
+string generateOrderId();
+void clearCartFile(const string& member_id);
 void clearScreen() {
     system("cls");
 }
@@ -1552,7 +1555,7 @@ void displayCart(Member loggedInMember) {
 	        editCart(cart, cartSize);
 	        break;
 	    } else if (choice == "3") {
-	        // proceedToPayment(cart, cartSize);
+	        proceedToPayment(cart, cartSize);
 	        break;
 	    } else if (choice == "4") {
 	        clearScreen();
@@ -2080,6 +2083,41 @@ bool isValidCVV(const string& cvv) {
             return false;
     }
     return true;
+}
+void recordPurchaseHistory(CartItem* cart, int cartSize, double total) {
+    string orderId = generateOrderId();
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    string date = to_string(ltm->tm_mday) + "/" + to_string(1 + ltm->tm_mon) + "/" + to_string(1900 + ltm->tm_year);
+    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
+    if (file) {
+        file << orderId << "," << loggedInMember.member_id << "," << date << "," << fixed << setprecision(2) << total << "\n";
+        for (int i = 0; i < cartSize; i++) {
+            file << cart[i].product_id << "," << cart[i].product_name << "," 
+                 << cart[i].quantity << "," << (cart[i].price + cart[i].addUp) << "\n";
+        }
+        file.close();
+    }
+}
+string generateOrderId() {
+    ifstream file(ORDER_ID_FILE);
+    int lastId = 0;
+    if (file) {
+        file >> lastId;
+        file.close();
+    }
+    lastId++;
+    ofstream outFile(ORDER_ID_FILE);
+    if (outFile) {
+        outFile << lastId;
+        outFile.close();
+    }
+    return "ORD" + to_string(lastId);
+}
+void clearCartFile(const string& member_id) {
+    string cartFile = getCartFilename(member_id);
+    ofstream file(cartFile);
+    file.close();
 }
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
