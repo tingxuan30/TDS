@@ -1869,7 +1869,168 @@ void editCart(CartItem*& cart, int& cartSize) {
         break;
     }
 }
+void proceedToPayment(CartItem* cart, int cartSize) {
+    if (cartSize == 0) {
+        cout << "Your cart is empty. Please add items to your cart before proceeding to payment.\n";
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        return;
+    }
+    clearScreen();
+    double totalPayment = 0.00;
+    cout << "------------------------------------------------------------------" << endl;
+    cout << "                              RECEIPT                             " << endl;
+    for (int i = 0; i < cartSize; ++i) {
+        cout << "------------------------------------------------------------------" << endl;
+        cout << "Item        : " << cart[i].attribute2 << " " << cart[i].product_name << " (" << cart[i].attribute1 << ")" << endl;
+        cout << "Price       : RM " << fixed << setprecision(2) << (cart[i].price + cart[i].addUp) << endl;
+        cout << "Quantity    : " << cart[i].quantity << endl;
+        cout << "Total       : RM " << fixed << setprecision(2) << cart[i].total << endl;
 
+        totalPayment += cart[i].total;
+    }
+    cout << "==================================================================" << endl;
+    cout << "Payment Amount: RM " << fixed << setprecision(2) << totalPayment << endl;
+    cout << "==================================================================" << endl;
+    if (totalPayment >= 100 && totalPayment < 120) {
+        double addOn = 0.00;
+        char proceed;
+        addOn = 120 - totalPayment;
+        cout << "\nAdd-on RM " << addOn << " to get 5% discount!" << endl;
+        cout << "\nEnter [0] to back to product list, enter [1] to proceed the payment: ";
+        cin >> proceed;
+        while (proceed != '0' && proceed != '1') {
+            cout << "Invalid input." << endl;
+            cout << "Enter 0 to back to product list, 1 to continue proceed to payment: ";
+            cin >> proceed;
+        }
+        if (proceed == '0') {
+            cin.ignore();
+            filterProducts();
+            return;
+        }
+    }
+    if (totalPayment >= 120) {
+        double discount = 0.05, discountAmount;
+        discountAmount = totalPayment * discount;
+        totalPayment -= discountAmount;
+        cout << "\nCongratulations, you get 5% discount!" << endl;
+        cout << "_________________________" << endl;
+        cout << "|Discount: RM " << discountAmount << "\t|" << endl;
+        cout << "|Total   : RM " << totalPayment << "\t|" << endl;
+        cout << "|_______________________|" << endl;
+    }
+    char paymentMethod;
+    cout << "\nChoose your payment method" << endl;
+    cout << "1. Cash" << endl;
+    cout << "2. Credit card" << endl;
+    cout << "\nYour choice [0 to cancel payment]: ";
+    cin >> paymentMethod;
+    while(paymentMethod != '0' && paymentMethod != '1' && paymentMethod != '2') {
+        cout << "Invalid choice. Please enter again: ";
+        cin >> paymentMethod;	
+    }
+    if(paymentMethod == '0') {
+        cout << "Back to main menu..." << endl;
+        cin.ignore();
+        cin.ignore();
+        clearScreen();
+        memberMenu(loggedInMember);
+    }
+    else if(paymentMethod == '1') {
+        cashPayment(cart, cartSize, totalPayment);
+    }
+    else if(paymentMethod == '2') {
+        creditCardPayment(cart, cartSize, totalPayment);
+    }
+}
+void creditCardPayment(CartItem* cart, int cartSize, double totalPayment) {
+    string cardNumber, expiryDate, cvv;
+    cout << "Credit card number (13-16 digits): ";
+    cin >> cardNumber;
+    while (!isValidCardNumber(cardNumber)) {
+        cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
+        cin >> cardNumber;
+    }
+    cout << "\nExpiry date (MM/YY): ";
+    cin >> expiryDate;
+    while (!isValidExpiryDate(expiryDate)) {
+        cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
+        cin >> expiryDate;
+    }
+    cout << "\nCVV: ";
+    cin >> cvv;
+    while (!isValidCVV(cvv)) {
+        cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
+        cin >> cvv;
+    }
+    cout << "\n\nProcessing payment...";
+    cout << "\nValidating card details";
+    for (int i = 0; i < 5; ++i) {
+        cout << ".";
+    }
+    cout << "\n\nPayment successful! Thank you for your purchase.";
+    recordPurchaseHistory(cart, cartSize, totalPayment);
+    delete[] cart;
+    cartSize = 0;
+    clearCartFile(loggedInMember.member_id);
+    cout << "\nYour cart has been cleared.\n";
+    cout << "\nDo you want to make more purchase[Y/N]?: ";
+    char morePurchase;
+    cin >> morePurchase;
+    if (morePurchase == 'Y' || morePurchase == 'y') {
+        cin.ignore();
+        clearScreen();
+        memberMenu(loggedInMember);
+    }
+    else if (morePurchase == 'N' || morePurchase == 'n') {
+        cout << "\nPress [ENTER] to log out...";
+        cin.ignore();
+        cin.ignore();
+        clearScreen();
+        mainMenu();
+    }
+}
+void cashPayment(CartItem* cart, int cartSize, double totalPayment) {
+    double cash;
+    cout << "\nCash  : RM ";
+    cin >> cash;	
+    while(cash < totalPayment) {
+        cout << "Your cash is not enough!";
+        cout << "\nCash  : RM ";
+        cin >> cash;	
+    }
+    if(cash > totalPayment) {
+        double change;
+        change = cash - totalPayment;
+        cout << "Change: RM "<< change;
+    }
+    cout << "\n\nProcessing payment";
+    for (int i = 0; i < 5; ++i) {
+        cout << ".";
+    }
+    cout << "\nPayment successful! Thank you for your purchase.";
+    recordPurchaseHistory(cart, cartSize, totalPayment);
+    delete[] cart;
+    cartSize = 0;
+    clearCartFile(loggedInMember.member_id);
+    cout << "\nYour cart has been cleared.\n";
+    cout << "\nDo you want to make more purchase[Y/N]?: ";
+    char morePurchase;
+    cin >> morePurchase;
+    if (morePurchase == 'Y' || morePurchase == 'y') {
+        cin.ignore();
+        clearScreen();
+        memberMenu(loggedInMember);
+    }
+    else if (morePurchase == 'N' || morePurchase == 'n') {
+        cout << "\nPress [ENTER] to log out...";
+        cin.ignore();
+        cin.ignore();
+        clearScreen();
+        mainMenu();
+    }
+}
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
         clearScreen();
