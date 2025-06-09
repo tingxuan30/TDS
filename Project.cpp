@@ -11,6 +11,8 @@ const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
 const string PRODUCT_FILE = "product.txt";
+const string ORDER_ID_FILE = "order_id_counter.txt";
+const string PURCHASE_HISTORY_FILE = "purchase_history.txt";
 template <typename T>
 struct Node {
     T data;
@@ -1867,6 +1869,7 @@ void editCart(CartItem*& cart, int& cartSize) {
         break;
     }
 }
+
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
         clearScreen();
