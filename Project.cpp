@@ -258,6 +258,12 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
 void displayCart(Member loggedInMember);
 void deleteCart(CartItem*& cart, int& cartSize);
 void editCart(CartItem*& cart, int& cartSize);
+void proceedToPayment(CartItem* cart, int cartSize);
+void creditCardPayment(CartItem* cart, int cartSize, double totalPayment);
+void cashPayment(CartItem* cart, int cartSize, double totalPayment);
+bool isValidCardNumber(const string& cardNumber);
+bool isValidExpiryDate(const string& expiryDate);
+bool isValidCVV(const string& cvv);
 void clearScreen() {
     system("cls");
 }
@@ -2030,6 +2036,50 @@ void cashPayment(CartItem* cart, int cartSize, double totalPayment) {
         clearScreen();
         mainMenu();
     }
+}
+bool isValidCardNumber(const string& cardNumber) {
+    if (cardNumber.length() < 13 || cardNumber.length() > 16)
+        return false;
+
+    for (int i = 0; i < cardNumber.length(); ++i) {
+        if (cardNumber[i] < '0' || cardNumber[i] > '9')
+            return false;
+    }
+    return true;
+}
+bool isValidExpiryDate(const string& expiryDate) {
+    if (expiryDate.length() != 5 || expiryDate[2] != '/') {
+        return false;
+    }
+    string mmStr = expiryDate.substr(0, 2);
+    string yyStr = expiryDate.substr(3, 2);
+    if (!isAllDigits(mmStr) || !isAllDigits(yyStr)) {
+        return false;
+    }
+    
+    int month = stoi(mmStr);
+    int year = stoi(yyStr);
+    
+    if (month < 1 || month > 12) {
+        return false;
+    }
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    int currentYear = ltm->tm_year % 100; 
+    int currentMonth = ltm->tm_mon + 1;
+    if (year < currentYear || (year == currentYear && month < currentMonth)) {
+        return false;
+    }
+    return true;
+}
+bool isValidCVV(const string& cvv) {
+    if (cvv.length() != 3 && cvv.length() != 4)
+        return false;
+    for (int i = 0; i < cvv.length(); ++i) {
+        if (cvv[i] < '0' || cvv[i] > '9')
+            return false;
+    }
+    return true;
 }
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
