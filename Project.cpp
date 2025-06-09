@@ -259,12 +259,10 @@ void displayCart(Member loggedInMember);
 void deleteCart(CartItem*& cart, int& cartSize);
 void editCart(CartItem*& cart, int& cartSize);
 void proceedToPayment(CartItem* cart, int cartSize);
-void creditCardPayment(CartItem* cart, int cartSize, double totalPayment);
-void cashPayment(CartItem* cart, int cartSize, double totalPayment);
 bool isValidCardNumber(const string& cardNumber);
 bool isValidExpiryDate(const string& expiryDate);
 bool isValidCVV(const string& cvv);
-void recordPurchaseHistory(CartItem* cart, int cartSize, double total);
+void updateProductStock(CartItem* cart, int cartSize);
 string generateOrderId();
 void clearCartFile(const string& member_id);
 void clearScreen() {
@@ -1865,7 +1863,6 @@ void editCart(CartItem*& cart, int& cartSize) {
                 item.addUp = newAttribute2.addUp;
             }
             item.total = (item.price + item.addUp) * newQty;
-            
             cout << "Item updated successfully!" << endl;
             break;
         }
@@ -1879,167 +1876,25 @@ void editCart(CartItem*& cart, int& cartSize) {
         break;
     }
 }
-void proceedToPayment(CartItem* cart, int cartSize) {
-    if (cartSize == 0) {
-        cout << "Your cart is empty. Please add items to your cart before proceeding to payment.\n";
-        cout << "Press [ENTER] to continue.";
-        cin.ignore();
-        return;
+string generateOrderId() {
+    ifstream file(ORDER_ID_FILE);
+    int lastId = 0;
+    if (file) {
+        file >> lastId;
+        file.close();
     }
-    clearScreen();
-    double totalPayment = 0.00;
-    cout << "------------------------------------------------------------------" << endl;
-    cout << "                              RECEIPT                             " << endl;
-    for (int i = 0; i < cartSize; ++i) {
-        cout << "------------------------------------------------------------------" << endl;
-        cout << "Item        : " << cart[i].attribute2 << " " << cart[i].product_name << " (" << cart[i].attribute1 << ")" << endl;
-        cout << "Price       : RM " << fixed << setprecision(2) << (cart[i].price + cart[i].addUp) << endl;
-        cout << "Quantity    : " << cart[i].quantity << endl;
-        cout << "Total       : RM " << fixed << setprecision(2) << cart[i].total << endl;
-
-        totalPayment += cart[i].total;
+    lastId++;
+    ofstream outFile(ORDER_ID_FILE);
+    if (outFile) {
+        outFile << lastId;
+        outFile.close();
     }
-    cout << "==================================================================" << endl;
-    cout << "Payment Amount: RM " << fixed << setprecision(2) << totalPayment << endl;
-    cout << "==================================================================" << endl;
-    if (totalPayment >= 100 && totalPayment < 120) {
-        double addOn = 0.00;
-        char proceed;
-        addOn = 120 - totalPayment;
-        cout << "\nAdd-on RM " << addOn << " to get 5% discount!" << endl;
-        cout << "\nEnter [0] to back to product list, enter [1] to proceed the payment: ";
-        cin >> proceed;
-        while (proceed != '0' && proceed != '1') {
-            cout << "Invalid input." << endl;
-            cout << "Enter 0 to back to product list, 1 to continue proceed to payment: ";
-            cin >> proceed;
-        }
-        if (proceed == '0') {
-            cin.ignore();
-            filterProducts();
-            return;
-        }
-    }
-    if (totalPayment >= 120) {
-        double discount = 0.05, discountAmount;
-        discountAmount = totalPayment * discount;
-        totalPayment -= discountAmount;
-        cout << "\nCongratulations, you get 5% discount!" << endl;
-        cout << "_________________________" << endl;
-        cout << "|Discount: RM " << discountAmount << "\t|" << endl;
-        cout << "|Total   : RM " << totalPayment << "\t|" << endl;
-        cout << "|_______________________|" << endl;
-    }
-    char paymentMethod;
-    cout << "\nChoose your payment method" << endl;
-    cout << "1. Cash" << endl;
-    cout << "2. Credit card" << endl;
-    cout << "\nYour choice [0 to cancel payment]: ";
-    cin >> paymentMethod;
-    while(paymentMethod != '0' && paymentMethod != '1' && paymentMethod != '2') {
-        cout << "Invalid choice. Please enter again: ";
-        cin >> paymentMethod;	
-    }
-    if(paymentMethod == '0') {
-        cout << "Back to main menu..." << endl;
-        cin.ignore();
-        cin.ignore();
-        clearScreen();
-        memberMenu(loggedInMember);
-    }
-    else if(paymentMethod == '1') {
-        cashPayment(cart, cartSize, totalPayment);
-    }
-    else if(paymentMethod == '2') {
-        creditCardPayment(cart, cartSize, totalPayment);
-    }
+    return "ORD" + to_string(lastId);
 }
-void creditCardPayment(CartItem* cart, int cartSize, double totalPayment) {
-    string cardNumber, expiryDate, cvv;
-    cout << "Credit card number (13-16 digits): ";
-    cin >> cardNumber;
-    while (!isValidCardNumber(cardNumber)) {
-        cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
-        cin >> cardNumber;
-    }
-    cout << "\nExpiry date (MM/YY): ";
-    cin >> expiryDate;
-    while (!isValidExpiryDate(expiryDate)) {
-        cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
-        cin >> expiryDate;
-    }
-    cout << "\nCVV: ";
-    cin >> cvv;
-    while (!isValidCVV(cvv)) {
-        cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
-        cin >> cvv;
-    }
-    cout << "\n\nProcessing payment...";
-    cout << "\nValidating card details";
-    for (int i = 0; i < 5; ++i) {
-        cout << ".";
-    }
-    cout << "\n\nPayment successful! Thank you for your purchase.";
-    recordPurchaseHistory(cart, cartSize, totalPayment);
-    delete[] cart;
-    cartSize = 0;
-    clearCartFile(loggedInMember.member_id);
-    cout << "\nYour cart has been cleared.\n";
-    cout << "\nDo you want to make more purchase[Y/N]?: ";
-    char morePurchase;
-    cin >> morePurchase;
-    if (morePurchase == 'Y' || morePurchase == 'y') {
-        cin.ignore();
-        clearScreen();
-        memberMenu(loggedInMember);
-    }
-    else if (morePurchase == 'N' || morePurchase == 'n') {
-        cout << "\nPress [ENTER] to log out...";
-        cin.ignore();
-        cin.ignore();
-        clearScreen();
-        mainMenu();
-    }
-}
-void cashPayment(CartItem* cart, int cartSize, double totalPayment) {
-    double cash;
-    cout << "\nCash  : RM ";
-    cin >> cash;	
-    while(cash < totalPayment) {
-        cout << "Your cash is not enough!";
-        cout << "\nCash  : RM ";
-        cin >> cash;	
-    }
-    if(cash > totalPayment) {
-        double change;
-        change = cash - totalPayment;
-        cout << "Change: RM "<< change;
-    }
-    cout << "\n\nProcessing payment";
-    for (int i = 0; i < 5; ++i) {
-        cout << ".";
-    }
-    cout << "\nPayment successful! Thank you for your purchase.";
-    recordPurchaseHistory(cart, cartSize, totalPayment);
-    delete[] cart;
-    cartSize = 0;
-    clearCartFile(loggedInMember.member_id);
-    cout << "\nYour cart has been cleared.\n";
-    cout << "\nDo you want to make more purchase[Y/N]?: ";
-    char morePurchase;
-    cin >> morePurchase;
-    if (morePurchase == 'Y' || morePurchase == 'y') {
-        cin.ignore();
-        clearScreen();
-        memberMenu(loggedInMember);
-    }
-    else if (morePurchase == 'N' || morePurchase == 'n') {
-        cout << "\nPress [ENTER] to log out...";
-        cin.ignore();
-        cin.ignore();
-        clearScreen();
-        mainMenu();
-    }
+void clearCartFile(const string& member_id) {
+    string cartFile = getCartFilename(member_id);
+    ofstream file(cartFile);
+    file.close();
 }
 bool isValidCardNumber(const string& cardNumber) {
     if (cardNumber.length() < 13 || cardNumber.length() > 16)
@@ -2085,40 +1940,244 @@ bool isValidCVV(const string& cvv) {
     }
     return true;
 }
-void recordPurchaseHistory(CartItem* cart, int cartSize, double total) {
+class Order {
+    protected:
+        string orderId;
+        string memberId;
+        string date;
+        double totalAmount;
+        CartItem* items;
+        int itemCount;
+    public:
+        Order(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+        : orderId(id), memberId(memId), date(dt), totalAmount(total), itemCount(cartSize) {
+            items = new CartItem[cartSize];
+            for (int i = 0; i < cartSize; i++) {
+                items[i] = cart[i];
+            }
+        }
+        virtual ~Order() {
+            delete[] items;
+        }
+        virtual void displayReceipt() const {
+            cout << "------------------------------------------------------------------" << endl;
+            cout << "                              RECEIPT                             " << endl;
+            for (int i = 0; i < itemCount; ++i) {
+                cout << "------------------------------------------------------------------" << endl;
+                cout << "Item        : " << items[i].attribute2 << " " << items[i].product_name << " (" << items[i].attribute1 << ")" << endl;
+                cout << "Price       : RM " << fixed << setprecision(2) << (items[i].price + items[i].addUp) << endl;
+                cout << "Quantity    : " << items[i].quantity << endl;
+                cout << "Total       : RM " << fixed << setprecision(2) << items[i].total << endl;
+            }
+            cout << "==================================================================" << endl;
+            cout << "Payment Amount: RM " << fixed << setprecision(2) << totalAmount << endl;
+            cout << "==================================================================" << endl;
+        }
+        virtual void processPayment() = 0; 
+        void recordPurchase() {
+            ofstream file(PURCHASE_HISTORY_FILE, ios::app);
+            if (file) {
+                file << orderId << "," << memberId << "," << date << "," << fixed << setprecision(2) << totalAmount << "\n";
+                for (int i = 0; i < itemCount; i++) {
+                    file << items[i].product_id << "," << items[i].product_name << "," 
+                        << items[i].quantity << "," << (items[i].price + items[i].addUp) << "\n";
+                }
+                file << "\n"; 
+                file.close();
+            }
+        }
+};
+class CashOrder : public Order {
+    private:
+        double cashReceived;
+        double change;
+    public:
+        CashOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+        : Order(id, memId, dt, total, cart, cartSize), cashReceived(0), change(0) {}
+        void displayReceipt() const override {
+            Order::displayReceipt();
+            cout << "Cash Received: RM " << fixed << setprecision(2) << cashReceived << endl;
+            if (change > 0) {
+                cout << "Change       : RM " << fixed << setprecision(2) << change << endl;
+            }
+        }
+        void processPayment() override {
+            cout << "\nCash  : RM ";
+            cin >> cashReceived;	
+            while(cashReceived < totalAmount) {
+                cout << "Your cash is not enough!";
+                cout << "\nCash  : RM ";
+                cin >> cashReceived;	
+            }
+            if(cashReceived > totalAmount) {
+                change = cashReceived - totalAmount;
+                cout << "Change: RM "<< change;
+            }
+            cout << "\n\nProcessing payment";
+            for (int i = 0; i < 5; ++i) {
+                cout << ".";
+            }
+            cout << "\nPayment successful! Thank you for your purchase.";
+        }
+};
+class CreditCardOrder : public Order {
+private:
+    string cardNumber;
+    string expiryDate;
+    string cvv;
+public:
+    CreditCardOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+    : Order(id, memId, dt, total, cart, cartSize) {}
+
+    void processPayment() override {
+        cout << "Credit card number (13-16 digits): ";
+        cin >> cardNumber;
+        while (!isValidCardNumber(cardNumber)) {
+            cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
+            cin >> cardNumber;
+        }
+        cout << "\nExpiry date (MM/YY): ";
+        cin >> expiryDate;
+        while (!isValidExpiryDate(expiryDate)) {
+            cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
+            cin >> expiryDate;
+        }
+        cout << "\nCVV: ";
+        cin >> cvv;
+        while (!isValidCVV(cvv)) {
+            cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
+            cin >> cvv;
+        }
+        cout << "\n\nProcessing payment...";
+        cout << "\nValidating card details";
+        for (int i = 0; i < 5; ++i) {
+            cout << ".";
+        }
+        cout << "\n\nPayment successful! Thank you for your purchase.";
+    }
+};
+void updateProductStock(CartItem* cart, int cartSize) {
+    if (!loadProducts()) {
+        cout << "Error: Could not load products for stock update." << endl;
+        return;
+    }
+    for (int i = 0; i < cartSize; i++) {
+        Product* product = binarySearchProduct(products, 0, productCount - 1, cart[i].product_id, "product_id");
+        if (product) {
+            product->stock -= cart[i].quantity;
+            if (product->stock < 0) product->stock = 0; 
+        }
+    }
+    ofstream file(PRODUCT_FILE);
+    if (!file) {
+        cout << "Error: Could not open product file for updating stock." << endl;
+        return;
+    }
+    for (int i = 0; i < productCount; i++) {
+        file << products[i].product_id << ","
+             << "\"" << products[i].product_name << "\"" << ","
+             << "\"" << products[i].category << "\"" << ","
+             << fixed << setprecision(2) << products[i].price << ","
+             << products[i].stock << ","
+             << "\"" << products[i].description << "\"" << ","
+             << "\"" << products[i].status << "\"";
+        if (i < productCount - 1) {
+            file << "\n";
+        }
+    }
+    file.close();
+}
+void proceedToPayment(CartItem* cart, int cartSize) {
+    if (cartSize == 0) {
+        cout << "Your cart is empty. Please add items to your cart before proceeding to payment.\n";
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        return;
+    }
+    clearScreen();
+    double totalPayment = 0.00;
+    for (int i = 0; i < cartSize; ++i) {
+        totalPayment += cart[i].total;
+    }
+    if (totalPayment >= 100 && totalPayment < 120) {
+        double addOn = 120 - totalPayment;
+        cout << "\nAdd-on RM " << addOn << " to get 5% discount!" << endl;
+        cout << "\nEnter [0] to back to product list, enter [1] to proceed the payment: ";
+        char proceed;
+        cin >> proceed;
+        while (proceed != '0' && proceed != '1') {
+            cout << "Invalid input." << endl;
+            cout << "Enter 0 to back to product list, 1 to continue proceed to payment: ";
+            cin >> proceed;
+        }
+        if (proceed == '0') {
+            cin.ignore();
+            filterProducts();
+            return;
+        }
+    }
+    if (totalPayment >= 120) {
+        double discount = 0.05, discountAmount;
+        discountAmount = totalPayment * discount;
+        totalPayment -= discountAmount;
+        cout << "\nCongratulations, you get 5% discount!" << endl;
+        cout << "_________________________" << endl;
+        cout << "|Discount: RM " << discountAmount << "\t|" << endl;
+        cout << "|Total   : RM " << totalPayment << "\t|" << endl;
+        cout << "|_______________________|" << endl;
+    }
     string orderId = generateOrderId();
     time_t now = time(0);
     tm *ltm = localtime(&now);
     string date = to_string(ltm->tm_mday) + "/" + to_string(1 + ltm->tm_mon) + "/" + to_string(1900 + ltm->tm_year);
-    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
-    if (file) {
-        file << orderId << "," << loggedInMember.member_id << "," << date << "," << fixed << setprecision(2) << total << "\n";
-        for (int i = 0; i < cartSize; i++) {
-            file << cart[i].product_id << "," << cart[i].product_name << "," 
-                 << cart[i].quantity << "," << (cart[i].price + cart[i].addUp) << "\n";
-        }
-        file.close();
+    Order* order = nullptr;
+    char paymentMethod;
+    cout << "\nChoose your payment method" << endl;
+    cout << "1. Cash" << endl;
+    cout << "2. Credit card" << endl;
+    cout << "\nYour choice [0 to cancel payment]: ";
+    cin >> paymentMethod;
+    while(paymentMethod != '0' && paymentMethod != '1' && paymentMethod != '2') {
+        cout << "Invalid choice. Please enter again: ";
+        cin >> paymentMethod;	
     }
-}
-string generateOrderId() {
-    ifstream file(ORDER_ID_FILE);
-    int lastId = 0;
-    if (file) {
-        file >> lastId;
-        file.close();
+    if(paymentMethod == '0') {
+        cout << "Back to main menu..." << endl;
+        cin.ignore();
+        cin.ignore();
+        clearScreen();
+        memberMenu(loggedInMember);
+        return;
     }
-    lastId++;
-    ofstream outFile(ORDER_ID_FILE);
-    if (outFile) {
-        outFile << lastId;
-        outFile.close();
+    else if(paymentMethod == '1') {
+        order = new CashOrder(orderId, loggedInMember.member_id, date, totalPayment, cart, cartSize);
     }
-    return "ORD" + to_string(lastId);
-}
-void clearCartFile(const string& member_id) {
-    string cartFile = getCartFilename(member_id);
-    ofstream file(cartFile);
-    file.close();
+    else if(paymentMethod == '2') {
+        order = new CreditCardOrder(orderId, loggedInMember.member_id, date, totalPayment, cart, cartSize);
+    }
+    order->displayReceipt();
+    order->processPayment();
+    order->recordPurchase();
+    updateProductStock(cart, cartSize);
+    delete order;
+    delete[] cart;
+    clearCartFile(loggedInMember.member_id);
+    cout << "\nYour cart has been cleared.\n";
+    cout << "\nDo you want to make more purchase[Y/N]?: ";
+    char morePurchase;
+    cin >> morePurchase;
+    if (morePurchase == 'Y' || morePurchase == 'y') {
+        cin.ignore();
+        clearScreen();
+        memberMenu(loggedInMember);
+    }
+    else if (morePurchase == 'N' || morePurchase == 'n') {
+        cout << "\nPress [ENTER] to log out...";
+        cin.ignore();
+        cin.ignore();
+        clearScreen();
+        mainMenu();
+    }
 }
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
