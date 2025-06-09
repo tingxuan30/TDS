@@ -1,2 +1,4 @@
-ORD1,U0002,9/6/2025,266.85
-111,Beef Pepperoni,10,28.09
+ORD1,U0002,10/6/2025,433.19
+120,Smoky Chicken,1,37.59,Cheesy Crust,Large
+132,Minute Maid Plus Orange,2,9.70,Cold,Tin
+151,Snackbox 1,10,39.90,Spicy Nacho Cheese Dip,4 pax

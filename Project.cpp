@@ -265,6 +265,7 @@ bool isValidCVV(const string& cvv);
 void updateProductStock(CartItem* cart, int cartSize);
 string generateOrderId();
 void clearCartFile(const string& member_id);
+void viewPurchaseHistory();
 void clearScreen() {
     system("cls");
 }
@@ -846,6 +847,11 @@ void memberMenu(Member loggedInMember) {
         else if (choice == "2") {
             clearScreen();
             displayCart(loggedInMember);
+            return;
+        }
+        else if (choice == "3") {
+            clearScreen();
+            viewPurchaseHistory();
             return;
         }
         else if (choice == "6") {
@@ -1975,17 +1981,18 @@ class Order {
         }
         virtual void processPayment() = 0; 
         void recordPurchase() {
-            ofstream file(PURCHASE_HISTORY_FILE, ios::app);
-            if (file) {
-                file << orderId << "," << memberId << "," << date << "," << fixed << setprecision(2) << totalAmount << "\n";
-                for (int i = 0; i < itemCount; i++) {
-                    file << items[i].product_id << "," << items[i].product_name << "," 
-                        << items[i].quantity << "," << (items[i].price + items[i].addUp) << "\n";
-                }
-                file << "\n"; 
-                file.close();
-            }
-        }
+		    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
+		    if (file) {
+		        file << orderId << "," << memberId << "," << date << "," << fixed << setprecision(2) << totalAmount << "\n";
+		        for (int i = 0; i < itemCount; i++) {
+		            file << items[i].product_id << "," << items[i].product_name << "," 
+		                << items[i].quantity << "," << (items[i].price + items[i].addUp) << ","
+		                << items[i].attribute1 << "," << items[i].attribute2 << "\n"; 
+		        }
+		        file << "\n"; 
+		        file.close();
+		    }
+		}
 };
 class CashOrder : public Order {
     private:
@@ -2178,6 +2185,88 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         clearScreen();
         mainMenu();
     }
+}
+void viewPurchaseHistory() {
+    if (loggedInMember.member_id.empty()) {
+        cout << "Error: No user logged in." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        return;
+    }
+    ifstream file(PURCHASE_HISTORY_FILE);
+    if (!file) {
+        cout << "No purchase history found." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        return;
+    }
+    clearScreen();
+    cout << "==================================================================" << endl;
+    cout << "|                      PURCHASE HISTORY                          |" << endl;
+    cout << "==================================================================" << endl;
+    string line;
+    bool foundPurchases = false;
+    int orderCount = 0;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        int commaCount = 0;
+        for (char ch : line) {
+            if (ch == ',') {
+                commaCount++;
+            }
+        }
+        if (commaCount == 3) {
+            stringstream ss(line);
+            string orderId, memberId, date;
+            double total;
+            getline(ss, orderId, ',');
+            getline(ss, memberId, ',');
+            getline(ss, date, ',');
+            ss >> total;
+            if (memberId == loggedInMember.member_id) {
+                foundPurchases = true;
+                orderCount++;
+                cout << "------------------------------------------------------------------" << endl;
+                cout << "| Order ID: " << left << setw(53) << orderId << "|" << endl;
+                cout << "| Date:     " << left << setw(53) << date << "|" << endl;
+                cout << "------------------------------------------------------------------" << endl;
+                while (getline(file, line) && !line.empty()) {
+                    stringstream itemSS(line);
+                    string productId, productName, attribute1, attribute2;
+                    int quantity;
+                    double price;
+                    getline(itemSS, productId, ',');
+                    getline(itemSS, productName, ',');
+                    itemSS >> quantity;
+                    itemSS.ignore(); 
+                    itemSS >> price;
+                    itemSS.ignore(); 
+                    getline(itemSS, attribute1, ',');
+                    getline(itemSS, attribute2);
+                    cout << " Product ID   : " << productId << endl;
+                    cout << " Product Name : " << productName << endl;
+                    cout << " Attribute 1  : " << attribute1 << endl;
+                    cout << " Attribute 2  : " << attribute2 << endl;
+                    cout << " Quantity     : " << quantity << endl;
+                    cout << " Price        : RM " << fixed << setprecision(2) << price << endl;
+                    cout << "------------------------------------------------------------------" << endl;
+                }
+                cout << "| Total: RM " << left << setw(53) << fixed << setprecision(2) << total << "|" << endl;
+                cout << "==================================================================" << endl << endl;
+            } else {
+                while (getline(file, line) && !line.empty()) {
+                    continue;
+                }
+            }
+        }
+    }
+    file.close();
+    if (!foundPurchases) {
+        cout << "|                  No purchase history found.                    |" << endl;
+        cout << "==================================================================" << endl;
+    }
+    cout << "Press [ENTER] to return to menu.";
+    cin.ignore();
 }
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
