@@ -2510,6 +2510,192 @@ void manageMember() {
         }
     }
 }
+void viewAdminList(const string& statusFilter) {
+    adminList.loadAdmins();
+    Node<Admin>* current = adminList.getHead();
+    clearScreen();
+    if (statusFilter == "Active") {
+        cout << "===========================================================================\n";
+        cout << "|                          ACTIVE ADMIN LIST                              |\n";      
+    } else {
+        cout << "===========================================================================\n";
+        cout << "|                           INACTIVE ADMIN LIST                           |\n";      
+    }
+    cout << "===========================================================================\n"; 
+    bool foundAny = false;
+    while (current != nullptr) {
+        if (current->data.status == statusFilter) {
+            foundAny = true;
+            cout << "| Member ID         : " << left << setw(52) << current->data.admin_id << "|\n";
+            cout << "| Name              : " << left << setw(52) << current->data.full_name << "|\n";
+            cout << "| Email             : " << left << setw(52) << current->data.email << "|\n";
+            cout << "| Contact           : " << left << setw(52) << current->data.contact << "|\n";
+            cout << "| Position          : " << left << setw(52) << current->data.position << "|\n";
+            cout << "---------------------------------------------------------------------------\n";
+        }
+        current = current->next;
+    }
+    if (!foundAny) {
+        cout << "|                                                                         |\n";
+        cout << "|                      No " << left << setw(48) << (statusFilter + " admins found.") << "|\n";
+        cout << "|                                                                         |\n";
+        cout << "---------------------------------------------------------------------------\n";
+		cout << "\nPress [ENTER] to return.";
+        cin.ignore();
+        clearScreen();
+        return; 
+	}
+    while (true) {
+        string searchChoice;
+        cout << "\nDo you want to search admin by ID? (Y/N to return): ";
+        getline(cin, searchChoice);
+        if (searchChoice == "N" || searchChoice == "n") {
+            return;
+        } else if (searchChoice == "Y" || searchChoice == "y") {
+            string searchId;
+            cout << "\nEnter Admin ID to search (or 'C' to cancel): ";
+            getline(cin, searchId);
+            if (searchId == "C" || searchId == "c") {
+                continue;
+            }
+            current = adminList.getHead();
+            bool found = false;
+            while (current != nullptr) {
+                if (current->data.admin_id == searchId && current->data.status == statusFilter) {
+                    clearScreen();
+                    cout << "===========================================================================\n";
+                    cout << "|                                MEMBER DETAILS                           |\n";
+                    cout << "===========================================================================\n";
+                    cout << "| Admin ID         : " << left << setw(52) << current->data.admin_id << "|\n";
+                    cout << "| Name              : " << left << setw(52) << current->data.full_name << "|\n";
+                    cout << "| Email             : " << left << setw(52) << current->data.email << "|\n";
+                    cout << "| Contact           : " << left << setw(52) << current->data.contact << "|\n";
+                    cout << "| Position          : " << left << setw(52) << current->data.position << "|\n";
+                    cout << "| Status            : " << left << setw(52) << current->data.status << "|\n";
+                    cout << "===========================================================================\n";
+                    found = true;
+                    break;
+                }
+                current = current->next;
+            }
+            if (!found) {
+                cout << "Admin with ID " << searchId << " not found in " << statusFilter << " admins.\n";
+            }
+            cout << "\nPress [ENTER] to continue.";
+            cin.ignore();
+            clearScreen();
+            break;
+        } else {
+            cout << "Invalid choice. Please enter Y (Yes), or N (No).\n";
+        }
+    }
+}
+void changeAdminStatus() {
+   	adminList.loadAdmins();
+    clearScreen();
+    cout << "===========================================================================\n";
+    cout << "|                               ADMIN LIST                                |\n";
+    cout << "===========================================================================\n";
+    cout << "| Name                  | Position              | Status                  |\n";
+    cout << "===========================================================================\n";
+    Node<Admin>* current = adminList.getHead();
+    while (current != nullptr) {
+        cout << "| " << left << setw(21) << current->data.full_name << " | "
+             << left << setw(21) << current->data.position << " | "
+             << left << setw(23) << current->data.status << " |\n";
+        current = current->next;
+    }
+    cout << "===========================================================================\n";
+    string chosenName;
+    while (true) {
+        cout << "\nEnter admin name to change status (or 'C' to cancel): ";
+        getline(cin, chosenName);
+        if (chosenName == "C" || chosenName == "c") {
+            return;
+        }
+        current = adminList.getHead();
+        bool found = false;
+        while (current != nullptr) {
+            if (current->data.full_name == chosenName) {
+                found = true;
+                break;
+            }
+            current = current->next;
+        }
+        if (!found) {
+            cout << "\nError: Admin '" << chosenName << "' not found. Please try again.\n";
+            continue;
+        }
+        break;
+    }
+    current = adminList.getHead();
+    while (current != nullptr) {
+        if (current->data.full_name == chosenName) {
+        	if (current->data.status == "Active")
+        		current->data.status =  "Inactive";
+        	else if (current->data.status == "Inactive") 
+            	current->data.status =  "Active";
+            break;
+        }
+        current = current->next;
+    }
+    ofstream file(MEMBERS_FILE);
+    if (file) {
+        current = adminList.getHead();
+        bool firstAdmin = true;
+        while (current != nullptr) {
+            if (!firstAdmin) {
+                file << "\n";
+            }
+            file << current->data.admin_id << "\n"
+                 << current->data.full_name << "\n"
+                 << current->data.email << "\n"
+                 << current->data.password << "\n"
+                 << current->data.contact << "\n"
+                 << current->data.position << "\n"
+                 << current->data.status;
+            firstAdmin = false;
+            current = current->next;
+        }
+        file.close();
+    }
+    cout << "\nAdmin " << chosenName << " status changed successfully.\n";
+    cout << "\nPress [ENTER] to continue.";
+    cin.ignore();
+}
+void manageAdmin() {
+    while (true) {
+        clearScreen();
+        cout << "===========================================================================\n";
+        cout << "|                            MANAGE ADMIN LIST                            |\n";      
+        cout << "===========================================================================\n";
+        cout << "| [1] View Active Admins                                                  |\n";
+        cout << "| [2] View Inactive Admins                                                |\n";
+        cout << "| [3] Change Admin Status                                                 |\n";
+        cout << "| [4] Return to Admin Menu                                                |\n";
+        cout << "===========================================================================\n";
+        string choice;
+        cout << "Enter your choice: ";
+        getline(cin, choice);
+        
+        if (choice == "1") {
+            viewAdminList("Active");
+        }
+        else if (choice == "2") {
+            viewAdminList("Inactive");
+        }
+        else if (choice == "3") {
+            changeAdminStatus();
+        }
+        else if (choice == "4") {
+            adminMenu(loggedInAdmin);
+        }
+        else {
+            cout << "Invalid choice, Press [ENTER] to try again.";
+            cin.ignore();
+        }
+    }
+}
 void adminMenu(Admin loggedInAdmin) {
     while (true) {
         clearScreen();
@@ -2528,7 +2714,12 @@ void adminMenu(Admin loggedInAdmin) {
         string choice;
         cout << "Enter your choice: ";
         getline(cin, choice);
-		if(choice == "3") {
+        if(choice == "2") {
+            clearScreen();
+            manageAdmin();
+            return;
+        }
+		else if(choice == "3") {
             clearScreen();
             manageMember();
             return;
