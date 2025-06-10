@@ -1484,7 +1484,7 @@ void displayCart(Member loggedInMember) {
                 return;
             } else if (choice == "2") {
                 clearScreen();
-                mainMenu();
+        		memberMenu(loggedInMember);
                 return;
             } else {
                 cout << "Invalid choice. Please enter 1 or 2." << endl;
@@ -1983,7 +1983,16 @@ class Order {
         void recordPurchase() {
 		    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
 		    if (file) {
-		        file << orderId << "," << memberId << "," << date << "," << fixed << setprecision(2) << totalAmount << "\n";
+		        time_t now = time(0);
+		        tm *ltm = localtime(&now);
+		        string datetime = to_string(ltm->tm_mday) + "/" + 
+		                         to_string(1 + ltm->tm_mon) + "/" + 
+		                         to_string(1900 + ltm->tm_year) + " " +
+		                         to_string(ltm->tm_hour) + ":" +
+		                         to_string(ltm->tm_min) + ":" +
+		                         to_string(ltm->tm_sec);
+		        file << orderId << "," << memberId << "," << datetime << "," 
+		             << fixed << setprecision(2) << totalAmount << "\n";
 		        for (int i = 0; i < itemCount; i++) {
 		            file << items[i].product_id << "," << items[i].product_name << "," 
 		                << items[i].quantity << "," << (items[i].price + items[i].addUp) << ","
@@ -2136,7 +2145,12 @@ void proceedToPayment(CartItem* cart, int cartSize) {
     string orderId = generateOrderId();
     time_t now = time(0);
     tm *ltm = localtime(&now);
-    string date = to_string(ltm->tm_mday) + "/" + to_string(1 + ltm->tm_mon) + "/" + to_string(1900 + ltm->tm_year);
+    string datetime = to_string(ltm->tm_mday) + "/" + 
+                     to_string(1 + ltm->tm_mon) + "/" + 
+                     to_string(1900 + ltm->tm_year) + " " +
+                     to_string(ltm->tm_hour) + ":" +
+                     to_string(ltm->tm_min) + ":" +
+                     to_string(ltm->tm_sec);
     Order* order = nullptr;
     char paymentMethod;
     cout << "\nChoose your payment method" << endl;
@@ -2157,10 +2171,10 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         return;
     }
     else if(paymentMethod == '1') {
-        order = new CashOrder(orderId, loggedInMember.member_id, date, totalPayment, cart, cartSize);
+        order = new CashOrder(orderId, loggedInMember.member_id, datetime, totalPayment, cart, cartSize);
     }
     else if(paymentMethod == '2') {
-        order = new CreditCardOrder(orderId, loggedInMember.member_id, date, totalPayment, cart, cartSize);
+        order = new CreditCardOrder(orderId, loggedInMember.member_id, datetime, totalPayment, cart, cartSize);
     }
     order->displayReceipt();
     order->processPayment();
@@ -2267,6 +2281,8 @@ void viewPurchaseHistory() {
     }
     cout << "Press [ENTER] to return to menu.";
     cin.ignore();
+	clearScreen();
+    memberMenu(loggedInMember);
 }
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
