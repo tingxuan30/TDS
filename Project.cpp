@@ -2052,29 +2052,23 @@ class Order {
             cout << "==================================================================" << endl;
         }
         virtual void processPayment() = 0; 
-        void recordPurchase() {
-		    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
-		    if (file) {
-		        time_t now = time(0);
-		        tm *ltm = localtime(&now);
-		        string datetime = to_string(ltm->tm_mday) + "/" + 
-		                         to_string(1 + ltm->tm_mon) + "/" + 
-		                         to_string(1900 + ltm->tm_year) + " " +
-		                         to_string(ltm->tm_hour) + ":" +
-		                         to_string(ltm->tm_min) + ":" +
-		                         to_string(ltm->tm_sec);
-		        file << orderId << "," << memberId << "," << datetime << "," 
-		             << fixed << setprecision(2) << totalAmount << "\n";
-		        for (int i = 0; i < itemCount; i++) {
-		            file << items[i].product_id << "," << items[i].product_name << "," 
-		                << items[i].quantity << "," << (items[i].price + items[i].addUp) << ","
-		                << items[i].attribute1 << "," << items[i].attribute2 << "\n"; 
-		        }
-		        file << "\n"; 
-		        file.close();
-		    }
-		}
+        friend void recordPurchase(Order* order); 
 };
+void recordPurchase(Order* order) {
+	ofstream file(PURCHASE_HISTORY_FILE, ios::app);
+    if (file) {
+        string datetime = getCurrentDateTime(); 
+        file << order->orderId << "," << order->memberId << "," << datetime << "," 
+             << fixed << setprecision(2) << order->totalAmount << "\n";
+        for (int i = 0; i < order->itemCount; i++) {
+            file << order->items[i].product_id << "," << order->items[i].product_name << "," 
+                << order->items[i].quantity << "," << (order->items[i].price + order->items[i].addUp) << ","
+                << order->items[i].attribute1 << "," << order->items[i].attribute2 << "\n"; 
+        }
+        file << "\n"; 
+        file.close();
+    }
+}
 class CashOrder : public Order {
     private:
         double cashReceived;
@@ -2280,7 +2274,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
     }
     order->displayReceipt();
     order->processPayment();
-    order->recordPurchase();
+    recordPurchase(order);
     updateProductStock(cart, cartSize);
     delete order;
     delete[] cart;
