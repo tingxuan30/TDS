@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <cctype>
+#include <ctime>
 #include <stdexcept>
 using namespace std;
 const string MEMBERS_FILE = "member.txt";
@@ -13,6 +14,7 @@ const string ADMINS_ID_FILE = "admin_id.txt";
 const string PRODUCT_FILE = "product.txt";
 const string ORDER_ID_FILE = "order_id_counter.txt";
 const string PURCHASE_HISTORY_FILE = "purchase_history.txt";
+const string FEEDBACK_FILE = "feedback.txt";
 template <typename T>
 struct Node {
     T data;
@@ -108,6 +110,18 @@ struct CartItem {
         addUp = add;
         total = t;
         status = stat;
+    }
+};
+struct RatingFeedback {
+    string member_id;
+    int rating; 
+    string feedback_text;
+    string datetime; 
+    RatingFeedback(string m_id = "", int r = 0, string fb_text = "", string dt = "") {
+        member_id = m_id;
+        rating = r;
+        feedback_text = fb_text;
+        datetime = dt;
     }
 };
 template <typename T>
@@ -240,8 +254,46 @@ public:
         return nullptr;
     }
 };
+class RatingFeedbackLinkedList : public LinkedList<RatingFeedback> {
+public:
+    void loadFeedback() {
+        ifstream file(FEEDBACK_FILE);
+        if (!file) {
+            ofstream createFile(FEEDBACK_FILE);
+            createFile.close();
+            return;
+        }
+        clear();
+        string line;
+        while (getline(file, line)) {
+            if (line.empty()) continue;
+            RatingFeedback feedback;
+            feedback.member_id = line;
+            getline(file, line);
+            feedback.rating = stoi(line);
+            getline(file, feedback.feedback_text);
+            getline(file, feedback.datetime); 
+            append(feedback);
+        }
+        file.close();
+    }
+    friend void saveFeedbackToFile(const RatingFeedback& feedback);
+};
+void saveFeedbackToFile(const RatingFeedback& feedback) {
+    ofstream file(FEEDBACK_FILE, ios::app); 
+    if (file) {
+        file << feedback.member_id << "\n";
+        file << feedback.rating << "\n";
+        file << feedback.feedback_text << "\n";
+        file << feedback.datetime << "\n"; 
+        file.close();
+    } else {
+        cout << "Error: Unable to open feedback file for writing." << endl;
+    }
+}
 MemberLinkedList memberList;
 AdminLinkedList adminList;
+RatingFeedbackLinkedList feedbackList;
 Member loggedInMember;
 Admin loggedInAdmin;
 Product* products = nullptr;
@@ -266,6 +318,8 @@ void updateProductStock(CartItem* cart, int cartSize);
 string generateOrderId();
 void clearCartFile(const string& member_id);
 void viewPurchaseHistory();
+void submitRatingFeedback(const string& member_id);
+string getCurrentDateTime();
 void clearScreen() {
     system("cls");
 }
@@ -852,6 +906,11 @@ void memberMenu(Member loggedInMember) {
         else if (choice == "3") {
             clearScreen();
             viewPurchaseHistory();
+            return;
+        }
+        else if (choice == "5") {
+            clearScreen();
+            submitRatingFeedback(loggedInMember.member_id);
             return;
         }
         else if (choice == "6") {
@@ -2325,6 +2384,50 @@ void viewPurchaseHistory() {
     cout << "Press [ENTER] to return to menu.";
     cin.ignore();
 	clearScreen();
+    memberMenu(loggedInMember);
+}
+string getCurrentDateTime() {
+    time_t now = time(nullptr);
+    tm* localTime = localtime(&now);
+
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
+    return string(buffer);
+}
+void submitRatingFeedback(const string& member_id) {
+    clearScreen();
+    cout << "\n===============================================================\n";
+    cout << "                         RATE OUR SYSTEM                       \n";
+    cout << "===============================================================\n";
+    int rating;
+    string feedback_text;
+    while (true) {
+        cout << "Enter your rating (1-5, 5 being excellent): ";
+        string ratingInput;
+        getline(cin, ratingInput);
+        try {
+            rating = stoi(ratingInput);
+            if (rating >= 1 && rating <= 5) {
+                break;
+            } else {
+                cout << "Invalid rating. Please enter a number between 1 and 5.\n";
+            }
+        } catch (const invalid_argument& e) {
+            cout << "Invalid input. Please enter a number.\n";
+        } catch (const out_of_range& e) {
+            cout << "Input out of range. Please enter a number between 1 and 5.\n";
+        }
+    }
+    cout << "Enter your feedback: ";
+    getline(cin, feedback_text);
+    string currentDateTime = getCurrentDateTime();
+    RatingFeedback newFeedback(member_id, rating, feedback_text, currentDateTime);
+    saveFeedbackToFile(newFeedback); 
+    feedbackList.append(newFeedback);
+
+    cout << "\nThank you for your feedback!\n";
+    cout << "\nPress [ENTER] to return to Member Menu.";
+    cin.get();
     memberMenu(loggedInMember);
 }
 void viewMemberList(const string& statusFilter) {
