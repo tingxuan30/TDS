@@ -942,9 +942,14 @@ void filterProducts() {
         cout << "| 4. Back to Main Menu                                        |" << endl;
         cout << "===============================================================" << endl;
         string choiceString;
-        cout << "Enter your choice : ";
-        getline(cin,choiceString);
-        int choice = stoi(choiceString);
+		cout << "Enter your choice : ";
+		getline(cin, choiceString);
+		if (choiceString.empty()) {
+		    cout << "Choice cannot be empty. Press [ENTER] to retry.";
+		    cin.get();
+		    continue;
+		}
+		int choice = stoi(choiceString);
         string categories[] = {"Pizza", "Side", "Beverage"};
         if (choice < 1 || choice > 4) {
             cout << "Invalid choice. Press [ENTER] to retry.";
@@ -1763,6 +1768,14 @@ void editCart(CartItem*& cart, int& cartSize) {
             cin.ignore();
             continue;
         }
+        if (product->status == "Inactive") {
+            cout << "\n_______________________________________________\n";
+            cout << "| ERROR: CANNOT EDIT INACTIVE PRODUCT         |\n";
+            cout << "|_____________________________________________|\n";
+            cout << "Press [ENTER] to continue.";
+            cin.ignore();
+            continue;
+        }
         while (true) {
             cout << "\nEditing: " << item.product_name << endl;
             cout << "Current quantity: " << item.quantity << endl;
@@ -2110,10 +2123,40 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         cin.ignore();
         return;
     }
-    clearScreen();
+    bool canProceed = true;
     double totalPayment = 0.00;
+    clearScreen();
+    cout << "==================================================================" << endl;
+    cout << "|                       CHECKING CART ITEMS                      |" << endl;
+    cout << "==================================================================" << endl;
     for (int i = 0; i < cartSize; ++i) {
-        totalPayment += cart[i].total;
+        Product* product = binarySearchProduct(products, 0, productCount - 1, cart[i].product_id, "product_id");
+        if (!product || product->status == "Inactive") {
+            cout << "------------------------------------------------------------------" << endl;
+            cout << "| WARNING: Product '" << cart[i].product_name << "' is no longer available!" << endl;
+            cout << "------------------------------------------------------------------" << endl;
+            canProceed = false;
+        } else if (cart[i].quantity > product->stock) {
+            cout << "------------------------------------------------------------------" << endl;
+            cout << "| WARNING: Not enough stock for '" << cart[i].product_name << "'!" << endl;
+            cout << "| Available: " << product->stock << ", Requested: " << cart[i].quantity << endl;
+            cout << "------------------------------------------------------------------" << endl;
+            canProceed = false;
+        } else {
+            totalPayment += cart[i].total;
+        }
+    }
+    if (!canProceed) {
+        cout << "==================================================================" << endl;
+        cout << "| CANNOT PROCEED TO PAYMENT DUE TO ISSUES WITH ABOVE ITEMS!      |" << endl;
+        cout << "| Please edit or remove these items from your cart.              |" << endl;
+        cout << "==================================================================" << endl;
+        cout << "\nPress [ENTER] to return to cart.";
+        cin.ignore();
+        cin.get();
+        clearScreen();
+        displayCart(loggedInMember);
+        return;
     }
     if (totalPayment >= 100 && totalPayment < 120) {
         double addOn = 120 - totalPayment;
