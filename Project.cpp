@@ -320,6 +320,7 @@ void clearCartFile(const string& member_id);
 void viewPurchaseHistory();
 void submitRatingFeedback(const string& member_id);
 string getCurrentDateTime();
+void viewFeedbackRating();
 void clearScreen() {
     system("cls");
 }
@@ -2759,6 +2760,55 @@ void changeAdminStatus() {
     cout << "\nAdmin " << chosenName << " status changed successfully.\n";
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
+}
+void viewFeedbackRating() {
+	RatingFeedbackLinkedList RF;
+	RF.loadFeedback();
+	Node<RatingFeedback>* current = RF.getHead();
+	bool foundRatingFeedback = false;
+    while (current != NULL) {
+        RatingFeedback fb = current->data;
+        foundRatingFeedback = true;
+        cout << "===========================================================================\n";
+        cout << "| Date & Time  : " << left << setw(57) << fb.datetime << "|\n";
+        cout << "===========================================================================\n";
+        cout << "| Member ID    : " << left << setw(57) << fb.member_id << "|\n";
+        cout << "| Rating       : " << left << setw(57) << fb.rating << "|\n";
+        cout << "| Comment      : " << left << setw(57) << fb.feedback_text << "|\n";
+        cout << "---------------------------------------------------------------------------\n";
+        current = current->next;
+    }
+    if (!foundRatingFeedback) {
+    	cout << "---------------------------------------------------------------------------\n";
+        cout << "|                                                                         |\n";
+        cout << "|                       No feedback records found.                        |\n";
+        cout << "|                                                                         |\n";
+        cout << "---------------------------------------------------------------------------\n";
+        cout << "Press [Enter] to return to the admin menu.";
+        cin.ignore();
+        cin.get();
+        adminMenu(loggedInAdmin);
+    }
+    while (true){
+        cout << "1. Filter feedback by rate level\n";
+        cout << "2. Sort feedback and rating\n";
+        cout << "\nEnter your choice (R for return): ";
+        string choice;
+        getline(cin, choice);
+        if (choice == "1") {
+            clearScreen();
+            filterFeedbackRating(RF);
+        } else if (choice == "2") {
+            //
+        } else if (choice == "R" || choice == "r") {
+            clearScreen();
+            adminMenu(loggedInAdmin);
+        } else if (choice.empty()) {
+            cout << "\nInvalid input. The choice cannot be empty.\n";
+        } else {
+            cout << "\nInvalid choice. Please enter 1, 2 or R.\n";
+        }
+    }
 }
 void manageAdmin() {
     while (true) {
