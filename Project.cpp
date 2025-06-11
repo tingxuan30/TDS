@@ -3233,7 +3233,7 @@ void manageRating() {
             clearScreen();
             filterFeedbackRating(RF);
         } else if (choice == "2") {
-            //
+            sortFeedbackRating();
         } else if (choice == "R" || choice == "r") {
             clearScreen();
             adminMenu(loggedInAdmin);
