@@ -320,7 +320,7 @@ void clearCartFile(const string& member_id);
 void viewPurchaseHistory();
 void submitRatingFeedback(const string& member_id);
 string getCurrentDateTime();
-void viewFeedbackRating();
+void manageRating();
 void clearScreen() {
     system("cls");
 }
@@ -2816,7 +2816,7 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
         cout << "Invalid input. Rating cannot be empty.\n";
         cin.ignore();
         clearScreen();
-    	viewFeedbackRating();
+    	manageRating();
     }
     bool onlyDigits = true;
         for (int i = 0; i < input.length(); ++i) {
@@ -2829,14 +2829,14 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
         cout << "Invalid input. Please enter a number between 1 and 5.\n";
         cin.ignore();
         clearScreen();
-    	viewFeedbackRating();
+    	manageRating();
     }
     int rate_filter = stoi(input);
     if (rate_filter < 1 || rate_filter > 5) {
         cout << "Invalid rating. Please enter a number between 1 and 5.\n";
         cin.ignore();
         clearScreen();
-    	viewFeedbackRating();
+    	manageRating();
     }
     cout << "===========================================================================\n";
     cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
@@ -2865,9 +2865,9 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
     cout << "\nPress [ENTER] to return to feedback menu.";
     cin.get();
     clearScreen();
-    viewFeedbackRating();
+    manageRating();
 }
-void viewFeedbackRating() {
+void manageRating() {
 	RatingFeedbackLinkedList RF;
 	RF.loadFeedback();
 	Node<RatingFeedback>* current = RF.getHead();
@@ -2961,7 +2961,7 @@ void adminMenu(Admin loggedInAdmin) {
         }
         else if(choice == "5") {
             clearScreen();
-            //manageRating();
+            manageRating();
             return;
         }
         else if(choice == "6") {
