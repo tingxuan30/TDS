@@ -11,6 +11,7 @@ const string MEMBERS_FILE = "member.txt";
 const string MEMBERS_ID_FILE = "member_id.txt";
 const string ADMINS_FILE = "admin.txt";
 const string ADMINS_ID_FILE = "admin_id.txt";
+const string PRODUCT_ID_FILE = "product_id_counter.txt";
 const string PRODUCT_FILE = "product.txt";
 const string ORDER_ID_FILE = "order_id_counter.txt";
 const string PURCHASE_HISTORY_FILE = "purchase_history.txt";
@@ -162,6 +163,31 @@ class LinkedList {
         virtual ~LinkedList() {
             clear();
         }
+};
+class Products : public LinkedList<Product> {
+public:
+	Product pro;
+    bool nameExists(const string& name) const {
+        Node<Product>* current = head;
+        while (current != nullptr) {
+            if (current->data.product_name == pro.product_name) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+    Product* findProductByCategory(const string& category) {
+        Node<Product>* current = head;
+        while (current != nullptr) {
+            if (current->data.category == category) {
+                return &(current->data);
+            }
+            current = current->next;
+        }
+        return nullptr;
+    }
+    friend bool loadProducts();
 };
 class MemberLinkedList : public LinkedList<Member> {
 public:
@@ -331,6 +357,7 @@ void viewPurchaseHistory();
 void submitRatingFeedback(const string& member_id);
 string getCurrentDateTime();
 void manageRating();
+void manageProduct(); 
 void clearScreen() {
     system("cls");
 }
@@ -2460,6 +2487,8 @@ void submitRatingFeedback(const string& member_id) {
     cin.get();
     memberMenu(loggedInMember);
 }
+
+
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
     Node<Member>* current = memberList.getHead();
@@ -2535,6 +2564,117 @@ void viewMemberList(const string& statusFilter) {
             break;
         } else {
             cout << "Invalid choice. Please enter Y (Yes), or N (No).\n";
+        }
+    }
+}
+void displayProductAdmin(const Product& product) {
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "| Name      : " << left << setw(55) << product.product_name << "|" << endl;
+    cout << "| Category  : " << left << setw(55) << product.category << "|" << endl;
+    cout << "| Price     : RM " << left << setw(52) << fixed << setprecision(2) << product.price << "|" << endl;
+    cout << "| Stock     : " << left << setw(55) << product.stock << "|" << endl;
+    cout << "| Status    : " << left << setw(55) << product.status << "|" << endl;
+    cout << "|                                                                    |" << endl;
+    cout << "|";
+    printWrappedText(product.description);
+    cout << "----------------------------------------------------------------------" << endl;
+}
+void manageProduct() {
+	Products P;
+    if (!loadProducts()) {
+        cout << "Failed to load products." << endl;
+        cout << "Press [ENTER] to return to Main Menu.";
+        cin.ignore();
+        cin.get();
+        clearScreen();
+        mainMenu();
+        return;
+    }
+    while (true) {
+        clearScreen();
+        cout << "===============================================================" << endl;
+        cout << "| Select a category:                                          |" << endl;
+        cout << "| 1. Pizza                                                    |" << endl;
+        cout << "| 2. Side                                                     |" << endl;
+        cout << "| 3. Beverage                                                 |" << endl;
+        cout << "| 4. Back to Main Menu                                        |" << endl;
+        cout << "===============================================================" << endl;
+        string choiceString;
+		cout << "Enter your choice : ";
+		getline(cin, choiceString);
+		if (choiceString.empty()) {
+		    cout << "Choice cannot be empty. Press [ENTER] to retry.";
+		    cin.get();
+		    continue;
+		}
+		int choice = stoi(choiceString);
+        string categories[] = {"Pizza", "Side", "Beverage"};
+        if (choice < 1 || choice > 4) {
+            cout << "Invalid choice. Press [ENTER] to retry.";
+            cin.get();
+            manageProduct();
+        }
+        else if (choice == 4) {
+            clearScreen();
+            adminMenu(loggedInAdmin);
+            return;
+        }
+        string selectedCategory = categories[choice - 1];
+        while (true) {
+            clearScreen();
+            cout << "Products in Category: " << selectedCategory << endl;
+            loadProducts();
+            bool found = false;
+            for (int i = 0; i < productCount; i++) {
+                if (products[i].category == selectedCategory && products[i].status == "Active") {
+                    displayProductAdmin(products[i]);
+                    found = true;
+                }
+            }
+            if (!found) {
+                cout << "\nNo available products found in '" << selectedCategory << "' category." << endl;
+            }
+            cout << " ________________________________________" << endl;
+	        cout << "| Options:                               |" << endl;
+	        cout << "| [1] Add New Product to This Category   |" << endl;
+	        cout << "| [2] Edit Existing Product              |" << endl;
+	        cout << "| [3] Restock Product                    |" << endl;
+	        cout << "| [4] Change Product Status              |" << endl;
+	        cout << "| [5] Return to Category Selection       |" << endl;
+	        cout << "|________________________________________|" << endl;
+            string selection;
+            cout << "\nEnter your choice: ";
+            getline(cin,selection);
+            if(selection == "1") {
+	            clearScreen();
+	            //addProduct();
+	            return;
+	        }
+	        else if(selection == "2") {
+	            clearScreen();
+	            //editProduct();
+	            return;
+	        }
+			else if(selection == "3") {
+	            clearScreen();
+	            //restockProduct();
+	            return;
+	        }
+	        else if(selection == "4") {
+	            clearScreen();
+	            //changeProductStatus();
+	            return;
+	        }
+	        else if(selection == "5") {
+	            clearScreen();
+	            manageProduct();
+	            return;
+	        }else {
+	        	cout << "Invlid choice. Press [ENTER] to continue.";
+	        	cin.get();
+			}
         }
     }
 }
@@ -3269,7 +3409,7 @@ void adminMenu(Admin loggedInAdmin) {
         getline(cin, choice);
         if(choice == "1") {
             clearScreen();
-            //manageProduct();
+            manageProduct();
             return;
         }
         else if(choice == "2") {
