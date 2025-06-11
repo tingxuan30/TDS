@@ -517,6 +517,19 @@ void quickSortRatingFeedback(RatingFeedback* arr, int low, int high, const strin
         quickSortRatingFeedback(arr, pivot + 1, high, key, reverse);
     }
 }
+RatingFeedback* binarySearchRatingFeedback(RatingFeedback* arr, int first, int last, int targetRating) {
+    while (first <= last) {
+        int mid = first + (last - first) / 2;
+        if (arr[mid].rating == targetRating) {
+            return &arr[mid];
+        } else if (arr[mid].rating < targetRating) {
+            first = mid + 1;
+        } else {
+            last = mid - 1;
+        }
+    }
+    return nullptr;
+}
 string getNextMemberId() {
     ifstream file(MEMBERS_ID_FILE);
     string lastId;
@@ -3233,25 +3246,45 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
         clearScreen();
     	manageRating();
     }
-    cout << "===========================================================================\n";
-    cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
+    int total = 0;
     Node<RatingFeedback>* current = RF.getHead();
-    bool found = false;
     while (current != nullptr) {
-        RatingFeedback fb = current->data;
-        if (fb.rating == rate_filter) {
-            found = true;
-            cout << "===========================================================================\n";
-            cout << "| Date & Time  : " << left << setw(57) << fb.datetime << "|\n";
-            cout << "===========================================================================\n";
-            cout << "| Member ID    : " << left << setw(57) << fb.member_id << "|\n";
-            cout << "| Rating       : " << left << setw(57) << fb.rating << "|\n";
-            cout << "| Comment      : " << left << setw(57) << fb.feedback_text << "|\n";
-            cout << "---------------------------------------------------------------------------\n";
-        }
+        total++;
         current = current->next;
     }
+    if (total == 0) {
+        cout << "No feedback records found.\n";
+        cin.get();
+        clearScreen();
+        manageRating();
+    }
+    RatingFeedback* feedbackArr = new RatingFeedback[total];
+    current = RF.getHead();
+    for (int i = 0; i < total && current != nullptr; ++i) {
+        feedbackArr[i] = current->data;
+        current = current->next;
+    }
+    quickSortRatingFeedback(feedbackArr, 0, total - 1, "rating", false);
+    RatingFeedback* match = binarySearchRatingFeedback(feedbackArr, 0, total - 1, rate_filter);
+    bool found = false;
+    if (match != nullptr) {
+        cout << "===========================================================================\n";
+        cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
+        for (int i = 0; i < total; ++i) {
+            if (feedbackArr[i].rating == rate_filter) {
+                found = true;
+                cout << "===========================================================================\n";
+                cout << "| Date & Time  : " << left << setw(57) << feedbackArr[i].datetime << "|\n";
+                cout << "===========================================================================\n";
+                cout << "| Member ID    : " << left << setw(57) << feedbackArr[i].member_id << "|\n";
+                cout << "| Rating       : " << left << setw(57) << feedbackArr[i].rating << "|\n";
+                cout << "| Comment      : " << left << setw(57) << feedbackArr[i].feedback_text << "|\n";
+                cout << "---------------------------------------------------------------------------\n";
+            }
+        }
+    }
     if (!found) {
+    	cout << "---------------------------------------------------------------------------\n";
         cout << "|                                                                         |\n";
         cout << "|                  No records found for rating level " << rate_filter << setw(20) << "." << "|\n";
         cout << "|                                                                         |\n";
