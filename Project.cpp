@@ -2761,6 +2761,112 @@ void changeAdminStatus() {
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
+void manageAdmin() {
+    while (true) {
+    	string choice;
+        clearScreen();
+        cout << "===========================================================================\n";
+        cout << "|                            MANAGE ADMIN LIST                            |\n";      
+        cout << "===========================================================================\n";
+        cout << "| [1] View Active Admins                                                  |\n";
+        cout << "| [2] View Inactive Admins                                                |\n";
+        if (loggedInAdmin.position == "superadmin"){
+        	cout << "| [3] Add New Admin                                                       |\n";
+	        cout << "| [4] Change Admin Status                                                 |\n";
+	        cout << "| [5] Return to Admin Menu                                                |\n";
+	        cout << "===========================================================================\n";
+		}
+		else{
+			cout << "| [3] Return to Admin Menu                                                |\n";
+        	cout << "===========================================================================\n";
+		}
+		cout << "Enter your choice: ";
+        getline(cin, choice);
+		if (choice == "1") {
+            viewAdminList("Active");
+        }
+        else if (choice == "2") {
+            viewAdminList("Inactive");
+        }
+        else if (choice == "3" && loggedInAdmin.position == "superadmin") {
+        	//add admin
+        }
+        else if (choice == "3" && loggedInAdmin.position == "admin") {
+        	adminMenu(loggedInAdmin);
+        }
+        else if (choice == "4" && loggedInAdmin.position == "superadmin") {
+            changeAdminStatus();
+        }
+        else if (choice == "5" && loggedInAdmin.position == "superadmin") {
+            adminMenu(loggedInAdmin);
+        }
+        else {
+            cout << "Invalid choice, Press [ENTER] to try again.";
+            cin.ignore();
+        }
+    }
+}
+void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
+    clearScreen();
+    cout << "Enter the rating level to filter by (1 to 5): ";
+    string input;
+    getline(cin, input);
+
+    if (input.empty()) {
+        cout << "Invalid input. Rating cannot be empty.\n";
+        cin.ignore();
+        clearScreen();
+    	viewFeedbackRating();
+    }
+    bool onlyDigits = true;
+        for (int i = 0; i < input.length(); ++i) {
+            if (!isdigit(input[i])) {
+                onlyDigits = false;
+                break;
+            }
+        }
+    if (!onlyDigits) {
+        cout << "Invalid input. Please enter a number between 1 and 5.\n";
+        cin.ignore();
+        clearScreen();
+    	viewFeedbackRating();
+    }
+    int rate_filter = stoi(input);
+    if (rate_filter < 1 || rate_filter > 5) {
+        cout << "Invalid rating. Please enter a number between 1 and 5.\n";
+        cin.ignore();
+        clearScreen();
+    	viewFeedbackRating();
+    }
+    cout << "===========================================================================\n";
+    cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
+    Node<RatingFeedback>* current = RF.getHead();
+    bool found = false;
+    while (current != NULL) {
+        RatingFeedback fb = current->data;
+        if (fb.rating == rate_filter) {
+            found = true;
+            cout << "===========================================================================\n";
+            cout << "| Date & Time  : " << left << setw(57) << fb.datetime << "|\n";
+            cout << "===========================================================================\n";
+            cout << "| Member ID    : " << left << setw(57) << fb.member_id << "|\n";
+            cout << "| Rating       : " << left << setw(57) << fb.rating << "|\n";
+            cout << "| Comment      : " << left << setw(57) << fb.feedback_text << "|\n";
+            cout << "---------------------------------------------------------------------------\n";
+        }
+        current = current->next;
+    }
+    if (!found) {
+        cout << "|                                                                         |\n";
+        cout << "|                  No records found for rating level " << rate_filter << setw(20) << "." << "|\n";
+        cout << "|                                                                         |\n";
+        cout << "---------------------------------------------------------------------------\n";
+    }
+    cout << "\nPress [ENTER] to return to feedback menu.";
+    cin.get();
+    clearScreen();
+    viewFeedbackRating();
+}
 void viewFeedbackRating() {
 	RatingFeedbackLinkedList RF;
 	RF.loadFeedback();
@@ -2807,51 +2913,6 @@ void viewFeedbackRating() {
             cout << "\nInvalid input. The choice cannot be empty.\n";
         } else {
             cout << "\nInvalid choice. Please enter 1, 2 or R.\n";
-        }
-    }
-}
-void manageAdmin() {
-    while (true) {
-    	string choice;
-        clearScreen();
-        cout << "===========================================================================\n";
-        cout << "|                            MANAGE ADMIN LIST                            |\n";      
-        cout << "===========================================================================\n";
-        cout << "| [1] View Active Admins                                                  |\n";
-        cout << "| [2] View Inactive Admins                                                |\n";
-        if (loggedInAdmin.position == "superadmin"){
-        	cout << "| [3] Add New Admin                                                       |\n";
-	        cout << "| [4] Change Admin Status                                                 |\n";
-	        cout << "| [5] Return to Admin Menu                                                |\n";
-	        cout << "===========================================================================\n";
-		}
-		else{
-			cout << "| [3] Return to Admin Menu                                                |\n";
-        	cout << "===========================================================================\n";
-		}
-		cout << "Enter your choice: ";
-        getline(cin, choice);
-		if (choice == "1") {
-            viewAdminList("Active");
-        }
-        else if (choice == "2") {
-            viewAdminList("Inactive");
-        }
-        else if (choice == "3" && loggedInAdmin.position == "superadmin") {
-        	//add admin
-        }
-        else if (choice == "3" && loggedInAdmin.position == "admin") {
-        	adminMenu(loggedInAdmin);
-        }
-        else if (choice == "4" && loggedInAdmin.position == "superadmin") {
-            changeAdminStatus();
-        }
-        else if (choice == "5" && loggedInAdmin.position == "superadmin") {
-            adminMenu(loggedInAdmin);
-        }
-        else {
-            cout << "Invalid choice, Press [ENTER] to try again.";
-            cin.ignore();
         }
     }
 }
