@@ -3143,14 +3143,14 @@ void sortFeedbackRating(){
     }
 	string choice;
 	cout << "-------------------------------" << endl;
-	cout << "| Sort feedback by" << "            |" << endl;
+	cout << "| Sort feedback by:" << "           |" << endl;
 	cout << "| 1. Rating (High to Low)" << "     |" << endl;
 	cout << "| 2. Rating (Low to High)" << "     |" << endl;
 	cout << "| 3. Date (Newest)" << "            |" << endl;
 	cout << "| 4. Date (Oldest)" << "            |" << endl;
 	cout << "| 5. Cancel" << "                   |" << endl;
 	cout << "-------------------------------" << endl;
-	cout << "Enter your choice (1-4): ";
+	cout << "Enter your choice (1-5): ";
     getline(cin, choice);
     if (choice == "1") {
         clearScreen();
