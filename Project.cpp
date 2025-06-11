@@ -243,6 +243,16 @@ public:
         }
         return false;
     }
+    bool contactExists(const string& contact) const {
+        Node<Admin>* current = head;
+        while (current != nullptr) {
+            if (current->data.contact == contact) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
     Admin* findAdminByEmail(const string& email) {
         Node<Admin>* current = head;
         while (current != nullptr) {
@@ -2761,6 +2771,221 @@ void changeAdminStatus() {
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
+void saveAdmin(const Admin& admin) {
+    bool fileIsEmpty = true;
+    {
+        ifstream file(ADMINS_FILE);
+        if (file) {
+            string line;
+            if (getline(file, line)) {
+                fileIsEmpty = false;
+            }
+        }
+    }
+    ofstream file(ADMINS_FILE, ios::app);
+    if (file) {
+        if (!fileIsEmpty) {
+            file << "\n";
+        }
+        file << admin.admin_id << "\n"
+             << admin.full_name << "\n"
+             << admin.email << "\n"
+             << admin.password << "\n"
+             << admin.contact << "\n"
+             << admin.position << "\n"
+             << admin.status << "\n";
+    }
+}
+void addNewAdmin() {
+	string admin_id = getNextAdminId();
+	string position = "admin";
+    string status = "Active";
+    string name, email, password, confirm_password, contact;
+    clearScreen();
+    cout << "===========================================================================\n";
+    cout << "|                            ADD NEW ADMIN                                |\n";
+    cout << "===========================================================================\n";
+    cout << "| Requirement:                                                            |\n";
+    cout << "| -> Name cannot be same                                                  |\n";
+    cout << "| -> Password need at least 8 chars                                       |\n";
+    cout << "| -> Password need one uppercase, lowercase, number                       |\n";
+    cout << "| -> Contact format: 012-3456789 or 012-34567890                          |\n";
+    cout << "===========================================================================";
+    while (true) {
+        cout << "\nEnter admin name (or 'C' to cancel): ";
+        getline(cin, name);
+        if (name == "C" || name == "c") {
+            cout << "\nOperation cancelled.\n";
+            cout << "Press [ENTER] to continue.";
+            cin.ignore();
+            return;
+        }
+        bool valid = true;
+        int letterCount = 0;
+        for (int i = 0; i < name.length(); ++i) {
+            char c = name[i];
+            if (!isalpha(c) && c != ' ') {
+                valid = false;
+                break;
+            }
+            if (isalpha(c)) 
+                letterCount++;
+        }
+        if (name.empty()) {
+            cout << "Name cannot be empty.\n";
+            continue;
+        }
+        if (!valid || letterCount < 5) {
+            cout << "Invalid name! Please enter a valid name.\n";
+            continue;
+        }
+        break;
+    }
+    while (true) {
+        cout << "\nEnter email (example: user@example.com): ";
+		getline(cin, email);
+        int atPosition = -1;
+        int dotPosition = -1;
+        int atCount = 0;
+        for (int i = 0; i < email.length(); i++) {
+            if (email[i] == '@') {
+                atCount++;
+                atPosition = i;
+            } else if (email[i] == '.' && atPosition != -1 && i > atPosition) {
+                dotPosition = i;
+            }
+        }
+        if (email.empty()) {
+            cout << "Email cannot be empty.\n";
+            continue;
+        }
+        bool valid = true;
+        if (email.length() < 5) 
+            valid = false; 
+        else if (atCount != 1) 
+            valid = false;  
+        else if (atPosition <= 0 || atPosition >= email.length() - 1) 
+            valid = false; 
+        else if (dotPosition == -1 || dotPosition == atPosition + 1) 
+            valid = false; 
+        else if (dotPosition >= email.length() - 1) 
+            valid = false; 
+        else if (email[0] == '.' || email[email.length() - 1] == '.') 
+            valid = false; 
+        for (int i = 0; i < email.length() - 1; ++i) {
+            if (email[i] == '.' && email[i + 1] == '.') {
+                valid = false;
+                break;
+            }
+        }
+        if (!valid) {
+            cout << "Invalid email format! Please enter a valid email.\n";
+            continue;
+        }
+        if (adminList.emailExists(email)) {
+            cout << "This email is already registered!\n";
+            continue;
+        }
+        break;
+    }
+    while (true) {
+        cout << "\nEnter password: ";
+        getline(cin, password);
+        if (password.empty()) {
+            cout << "Password cannot be empty.\n";
+            continue;
+        }
+		if (password.length() < 8) {
+            cout << "Password must be at least 8 characters!\n";
+            continue;
+        }
+        bool hasUpper = false, hasLower = false, hasDigit = false;
+        for (int i = 0; i < password.length(); ++i) {
+            char c = password[i];
+            if (isupper(c)) hasUpper = true;
+            if (islower(c)) hasLower = true;
+            if (isdigit(c)) hasDigit = true;
+        }
+        if (!hasUpper) {
+            cout << "Password must have at least 1 uppercase!\n";
+            continue;
+        }
+        if (!hasLower) {
+            cout << "Password must have at least 1 lowercase!\n";
+            continue;
+        }
+        if (!hasDigit) {
+            cout << "Password must have at least 1 number!\n";
+            continue;
+        }
+        cout << "\nConfirm your password: ";
+        getline(cin, confirm_password);
+        if (confirm_password != password) {
+            cout << "Passwords do not match!\n";
+            continue;
+        }
+        break;
+    }
+    while (true) {
+        cout << "\nEnter contact number (example: 012-3456789): ";
+        getline(cin, contact);
+        const char* p = contact.c_str();
+        bool valid = true;
+		int i = 0;
+		int digitCount = 0;
+		if (contact.empty()) {
+            cout << "Contact number cannot be empty.\n";
+            continue;
+        }
+        if (!(p[0] == '0' && p[1] == '1')) {
+	        cout << "Contact number must start with '01'.\n";
+	        valid = false;
+	    }
+		while (p[i] != '\0') {
+			if (i == 3 && p[i] != '-'){
+				valid = false;
+            	break;
+			}
+			char c = p[i];
+			if (!((c >= '0' && c <= '9') || c == '-' )){
+				valid = false;
+            	break;
+			}
+			if (c >= '0' && c <= '9'){
+				digitCount++;
+			}
+			i++;
+		}
+		if (valid && (digitCount < 10 || digitCount > 11)) {
+	        cout << "Contact number must be 10 or 11 digits total.\n";
+	        valid = false;
+	    }
+	    if (valid && i < 4) {
+	        cout << "Invalid contact number. Please enter a valid contact number.\n";
+	        valid = false;
+	    }
+	    if (!valid) {
+	        cout << "Invalid contact number format.\n";
+	        continue;
+	    }
+	    if (adminList.contactExists(contact)) {
+	        cout << "This contact number is already registered!\n";
+	        continue;
+	    }
+        break;
+    }
+	Admin newAdmin(admin_id, name, email, password, contact, position, status);
+	adminList.append(newAdmin);
+	saveAdmin(newAdmin); 
+    ofstream idFile(ADMINS_ID_FILE, ios::app);
+    if (idFile) {
+        idFile << admin_id << "\n";
+        idFile.close();
+	}
+	cout << "\nAdmin " << name << " added successfully!\n";
+    cout << "Press [ENTER] to continue.";
+    cin.ignore();
+}
 void manageAdmin() {
     while (true) {
     	string choice;
@@ -2789,7 +3014,7 @@ void manageAdmin() {
             viewAdminList("Inactive");
         }
         else if (choice == "3" && loggedInAdmin.position == "superadmin") {
-        	//add admin
+        	addNewAdmin();
         }
         else if (choice == "3" && loggedInAdmin.position == "admin") {
         	adminMenu(loggedInAdmin);
