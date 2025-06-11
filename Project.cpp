@@ -2762,29 +2762,41 @@ void changeAdminStatus() {
 }
 void manageAdmin() {
     while (true) {
+    	string choice;
         clearScreen();
         cout << "===========================================================================\n";
         cout << "|                            MANAGE ADMIN LIST                            |\n";      
         cout << "===========================================================================\n";
         cout << "| [1] View Active Admins                                                  |\n";
         cout << "| [2] View Inactive Admins                                                |\n";
-        cout << "| [3] Change Admin Status                                                 |\n";
-        cout << "| [4] Return to Admin Menu                                                |\n";
-        cout << "===========================================================================\n";
-        string choice;
-        cout << "Enter your choice: ";
+        if (loggedInAdmin.position == "superadmin"){
+        	cout << "| [3] Add New Admin                                                       |\n";
+	        cout << "| [4] Change Admin Status                                                 |\n";
+	        cout << "| [5] Return to Admin Menu                                                |\n";
+	        cout << "===========================================================================\n";
+		}
+		else{
+			cout << "| [3] Return to Admin Menu                                                |\n";
+        	cout << "===========================================================================\n";
+		}
+		cout << "Enter your choice: ";
         getline(cin, choice);
-        
-        if (choice == "1") {
+		if (choice == "1") {
             viewAdminList("Active");
         }
         else if (choice == "2") {
             viewAdminList("Inactive");
         }
-        else if (choice == "3") {
+        else if (choice == "3" && loggedInAdmin.position == "superadmin") {
+        	//add admin
+        }
+        else if (choice == "3" && loggedInAdmin.position == "admin") {
+        	adminMenu(loggedInAdmin);
+        }
+        else if (choice == "4" && loggedInAdmin.position == "superadmin") {
             changeAdminStatus();
         }
-        else if (choice == "4") {
+        else if (choice == "5" && loggedInAdmin.position == "superadmin") {
             adminMenu(loggedInAdmin);
         }
         else {
@@ -2800,8 +2812,13 @@ void adminMenu(Admin loggedInAdmin) {
         cout << "                          WELCOME " << loggedInAdmin.full_name << endl;
         cout << "===============================================================\n";
         cout << "1. View Product Inventory\n";
-        cout << "2. View Admin List\n";
-        cout << "3. View/Edit Member List\n";
+        if (loggedInAdmin.position == "superadmin"){
+        	cout << "2. View/Edit Admin List\n";
+		}
+		else{
+			cout << "2. View Admin List\n";
+		}
+		cout << "3. View/Edit Member List\n";
         cout << "4. View Order Record\n";
         cout << "5. View Rating Record\n";
         cout << "6. View Sales Report\n";
@@ -2811,7 +2828,12 @@ void adminMenu(Admin loggedInAdmin) {
         string choice;
         cout << "Enter your choice: ";
         getline(cin, choice);
-        if(choice == "2") {
+        if(choice == "1") {
+            clearScreen();
+            //manageProduct();
+            return;
+        }
+        else if(choice == "2") {
             clearScreen();
             manageAdmin();
             return;
@@ -2819,6 +2841,26 @@ void adminMenu(Admin loggedInAdmin) {
 		else if(choice == "3") {
             clearScreen();
             manageMember();
+            return;
+        }
+        else if(choice == "4") {
+            clearScreen();
+            //manageOrder();
+            return;
+        }
+        else if(choice == "5") {
+            clearScreen();
+            //manageRating();
+            return;
+        }
+        else if(choice == "6") {
+            clearScreen();
+            //dashboard();
+            return;
+        }
+        else if(choice == "7") {
+            clearScreen();
+            //adminProfile();
             return;
         }
         else if(choice == "8") {
