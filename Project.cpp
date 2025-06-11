@@ -2672,9 +2672,9 @@ void viewAdminList(const string& statusFilter) {
                 if (current->data.admin_id == searchId && current->data.status == statusFilter) {
                     clearScreen();
                     cout << "===========================================================================\n";
-                    cout << "|                                MEMBER DETAILS                           |\n";
+                    cout << "|                                ADMIN DETAILS                            |\n";
                     cout << "===========================================================================\n";
-                    cout << "| Admin ID         : " << left << setw(52) << current->data.admin_id << "|\n";
+                    cout << "| Admin ID          : " << left << setw(52) << current->data.admin_id << "|\n";
                     cout << "| Name              : " << left << setw(52) << current->data.full_name << "|\n";
                     cout << "| Email             : " << left << setw(52) << current->data.email << "|\n";
                     cout << "| Contact           : " << left << setw(52) << current->data.contact << "|\n";
@@ -2701,44 +2701,49 @@ void viewAdminList(const string& statusFilter) {
 void changeAdminStatus() {
    	adminList.loadAdmins();
     clearScreen();
-    cout << "===========================================================================\n";
-    cout << "|                               ADMIN LIST                                |\n";
-    cout << "===========================================================================\n";
-    cout << "| Name                  | Position              | Status                  |\n";
-    cout << "===========================================================================\n";
-    Node<Admin>* current = adminList.getHead();
+    cout << "==========================================================================================\n";
+    cout << "|                                     ADMIN LIST                                         |\n";
+    cout << "==========================================================================================\n";
+    cout << "| ID            | Name                  | Position              | Status                 |\n";
+	cout << "==========================================================================================\n";    
+	Node<Admin>* current = adminList.getHead();
     while (current != nullptr) {
-        cout << "| " << left << setw(21) << current->data.full_name << " | "
+        cout << "| " << left << setw(13) << current->data.admin_id << " | " 
+			 << left << setw(21) << current->data.full_name << " | "
              << left << setw(21) << current->data.position << " | "
-             << left << setw(23) << current->data.status << " |\n";
+             << left << setw(22) << current->data.status << " |\n";
         current = current->next;
     }
-    cout << "===========================================================================\n";
-    string chosenName;
+    cout << "==========================================================================================\n";
+    string chosenID;
     while (true) {
         cout << "\nEnter admin name to change status (or 'C' to cancel): ";
-        getline(cin, chosenName);
-        if (chosenName == "C" || chosenName == "c") {
+        getline(cin, chosenID);
+        if (chosenID == "C" || chosenID == "c") {
             return;
         }
         current = adminList.getHead();
         bool found = false;
         while (current != nullptr) {
-            if (current->data.full_name == chosenName) {
+            if (current->data.admin_id == chosenID) {
                 found = true;
                 break;
             }
             current = current->next;
         }
         if (!found) {
-            cout << "\nError: Admin '" << chosenName << "' not found. Please try again.\n";
+            cout << "\nError: Admin ID '" << chosenID << "' not found. Please try again.\n";
             continue;
         }
+        if(chosenID == loggedInAdmin.admin_id && loggedInAdmin.position == "superadmin") {
+	    	cout << "\nERROR: Superadmin cannot change their own status.\n";
+	    	continue;
+    	}
         break;
     }
     current = adminList.getHead();
     while (current != nullptr) {
-        if (current->data.full_name == chosenName) {
+        if (current->data.admin_id == chosenID) {
         	if (current->data.status == "Active")
         		current->data.status =  "Inactive";
         	else if (current->data.status == "Inactive") 
@@ -2767,7 +2772,7 @@ void changeAdminStatus() {
         }
         file.close();
     }
-    cout << "\nAdmin " << chosenName << " status changed successfully.\n";
+    cout << "\nAdmin " << chosenID << " status changed successfully.\n";
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
