@@ -2736,7 +2736,7 @@ void changeAdminStatus() {
         }
         current = current->next;
     }
-    ofstream file(MEMBERS_FILE);
+    ofstream file(ADMINS_FILE);
     if (file) {
         current = adminList.getHead();
         bool firstAdmin = true;
@@ -2750,7 +2750,7 @@ void changeAdminStatus() {
                  << current->data.password << "\n"
                  << current->data.contact << "\n"
                  << current->data.position << "\n"
-                 << current->data.status;
+                 << current->data.status << "\n";
             firstAdmin = false;
             current = current->next;
         }
