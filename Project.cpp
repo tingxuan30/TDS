@@ -465,6 +465,31 @@ CartItem* binarySearchCartItem(CartItem* arr, int low, int high, const string& t
     }
     return nullptr;
 }
+int partitionRatingFeedback(RatingFeedback* arr, int low, int high, const string& key, bool reverse){
+    RatingFeedback pivot = arr[high];
+    int i = low - 1;
+    for (int j = low; j < high; j++){
+        bool condition = false;
+        if (key == "rating"){
+            condition = reverse ? arr[j].rating > pivot.rating : arr[j].rating < pivot.rating;
+        }else if (key == "datetime"){
+        	condition = reverse ? arr[j].datetime > pivot.datetime : arr[j].datetime < pivot.datetime;
+		}
+        if (condition){
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+void quickSortRatingFeedback(RatingFeedback* arr, int low, int high, const string& key, bool reverse){
+    if (low < high) {
+        int pivot = partitionRatingFeedback(arr, low, high, key, reverse);
+        quickSortRatingFeedback(arr, low, pivot - 1, key, reverse);
+        quickSortRatingFeedback(arr, pivot + 1, high, key, reverse);
+    }
+}
 string getNextMemberId() {
     ifstream file(MEMBERS_ID_FILE);
     string lastId;
@@ -3072,7 +3097,7 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
     cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
     Node<RatingFeedback>* current = RF.getHead();
     bool found = false;
-    while (current != NULL) {
+    while (current != nullptr) {
         RatingFeedback fb = current->data;
         if (fb.rating == rate_filter) {
             found = true;
@@ -3097,12 +3122,85 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
     clearScreen();
     manageRating();
 }
+void sortFeedbackRating(){
+	RatingFeedbackLinkedList RF;
+	RF.loadFeedback();
+	int total = 0;
+    Node<RatingFeedback>* current = RF.getHead();
+    while (current != nullptr) {
+        total++;
+        current = current->next;
+    }
+    RatingFeedback* feedbackArr = new RatingFeedback[total];
+    current = RF.getHead();
+    for (int i = 0; i < total && current != nullptr; ++i) {
+        feedbackArr[i] = current->data;
+        current = current->next;
+    }
+    if (total == 0) {
+        cout << "No feedback records found.\n";
+        return;
+    }
+	string choice;
+	cout << "-------------------------------" << endl;
+	cout << "| Sort feedback by" << "            |" << endl;
+	cout << "| 1. Rating (High to Low)" << "     |" << endl;
+	cout << "| 2. Rating (Low to High)" << "     |" << endl;
+	cout << "| 3. Date (Newest)" << "            |" << endl;
+	cout << "| 4. Date (Oldest)" << "            |" << endl;
+	cout << "| 5. Cancel" << "                   |" << endl;
+	cout << "-------------------------------" << endl;
+	cout << "Enter your choice (1-4): ";
+    getline(cin, choice);
+    if (choice == "1") {
+        clearScreen();
+        cout << "======================================================================" << endl;
+        cout << "|         SORTED FEEDBACK & RATING (Rating - Highest First)          |" << endl;
+	    quickSortRatingFeedback(feedbackArr, 0, total - 1, "rating", true);
+    } else if (choice == "2") {
+    	clearScreen();
+        cout << "======================================================================" << endl;
+        cout << "|         SORTED FEEDBACK & RATING (Rating - Lowest First)           |" << endl;
+	    quickSortRatingFeedback(feedbackArr, 0, total - 1, "rating", false);
+    } else if (choice == "3") {
+    	clearScreen();
+        cout << "======================================================================" << endl;
+        cout << "|          SORTED FEEDBACK & RATING (Date - Newest First)            |" << endl;
+	    quickSortRatingFeedback(feedbackArr, 0, total - 1, "datetime", true); 
+	} else if (choice == "4") {
+    	clearScreen();
+        cout << "======================================================================" << endl;
+        cout << "|          SORTED FEEDBACK & RATING (Date - Oldest First)            |" << endl;
+	    quickSortRatingFeedback(feedbackArr, 0, total - 1, "datetime", false);  
+    } else if (choice == "5") {
+    	clearScreen();
+		manageRating();
+    } else  {
+        cout << "Invalid option. Press [ENTER] to try again.\n";
+	        cin.get();
+		    clearScreen();
+		    manageRating();
+    }
+	for (int i = 0; i < total; ++i) {
+	    cout << "======================================================================\n";
+	    cout << "| Member ID     	: " << setw(43) << feedbackArr[i].member_id << "|\n";
+	    cout << "| Rating   		: " << setw(43) << feedbackArr[i].rating << "|\n";
+	    cout << "| Comment  		: " << setw(43) << feedbackArr[i].feedback_text << "|\n";
+	    cout << "| Datetime 		: " << setw(43) << feedbackArr[i].datetime << "|\n";
+	    cout << "----------------------------------------------------------------------\n";
+	}
+	delete[] feedbackArr;
+	cout << "\nPress [ENTER] to return to feedback menu.";
+    cin.get();
+    clearScreen();
+    manageRating();
+}
 void manageRating() {
 	RatingFeedbackLinkedList RF;
 	RF.loadFeedback();
 	Node<RatingFeedback>* current = RF.getHead();
 	bool foundRatingFeedback = false;
-    while (current != NULL) {
+    while (current != nullptr) {
         RatingFeedback fb = current->data;
         foundRatingFeedback = true;
         cout << "===========================================================================\n";
