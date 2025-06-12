@@ -66,16 +66,14 @@ struct Product {
     string product_name;
     string category;
     double price;
-    int stock;
     string description;
     string status;
     Product(string id = "", string name = "", string cat = "", double cost = 0.0,
-            int quantity = 0, string desc = "", string stat = "") {
+            string desc = "", string stat = "") {
         product_id = id;
         product_name = name;
         category = cat;
         price = cost;
-        stock = quantity;
         description = desc;
         status = stat;
     }
@@ -187,6 +185,16 @@ public:
         }
         return nullptr;
     }
+    bool productNameExists(const string& product_name) const {
+	    Node<Product>* current = head;
+	    while (current != nullptr) {
+	        if (current->data.product_name == product_name) {
+	            return true;
+	        }
+	        current = current->next;
+	    }
+	    return false;
+	}
     friend bool loadProducts();
 };
 class MemberLinkedList : public LinkedList<Member> {
@@ -1022,13 +1030,13 @@ bool loadProducts() {
     int index = 0;
     while (getline(openfile, line) && index < productCount) {
         if (line.empty()) continue;
-        string parts[7];
-        int fieldsFound = splitAttribute(line, parts, 7);
-        if (fieldsFound < 7) {
+        string parts[6];
+        int fieldsFound = splitAttribute(line, parts, 6);
+        if (fieldsFound < 6) {
             cout << "Warning: Line skipped because extracted fiels max out" << endl;
             continue;
         }
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 6; i++) {
             parts[i] = removeQuotes(parts[i]);
         }
         products[index].product_id = parts[0];
@@ -1040,14 +1048,8 @@ bool loadProducts() {
             cout << "Warning: Invalid price format in line: " << line << endl;
             products[index].price = 0;
         }
-        try {
-            products[index].stock = stoi(parts[4]);
-        } catch (const invalid_argument& e) {
-            cout << "Warning: Invalid stock format in line: " << line << endl;
-            products[index].stock = 0;
-        }
-        products[index].description = parts[5];
-        products[index].status = parts[6];
+        products[index].description = parts[4];
+        products[index].status = parts[5];
         index++;
     }
     openfile.close();
@@ -1158,45 +1160,9 @@ void filterProducts() {
                 cin.get();
                 continue;
             }
-            if (product->stock <= 0) {
-                cout << "\nSorry, this product is out of stock!" << endl;
-                cout << "Press [ENTER] to continue.";
-                cin.ignore();
-                cin.get();
-                continue;
-            }
             cout << "Selecting product: " << product->product_name << endl;
             string attribute1 = getAttribute1(selectedCategory);
             Attribute2 obj = getAttribute2(selectedCategory);
-            while (true) {
-                cout << "\nEnter quantity (available: " << product->stock << "): ";
-                string quantity;
-                cin >> quantity;
-                bool isNumber = true;
-                for (int i=0;i<quantity.length();i++) {
-                    char c = quantity[i];
-                    if (!isdigit(c)) {
-                        isNumber = false;
-                        break;
-                    }
-                }
-                if (!isNumber) {
-                    cout << "Invalid input. Please enter a number." << endl;
-                    continue;
-                }
-                int qty = stoi(quantity);
-                if (qty <= 0) {
-                    cout << "Quantity must be positive." << endl;
-                } else if (qty > product->stock) {
-                    cout << "Not enough stock available." << endl;
-                } else {
-                    addToCart(product_id, qty, attribute1, obj);
-                    cout << "Press [ENTER] to continue.";
-                    cin.ignore();
-                    cin.get();
-                    break;
-                }
-            }
         }
     }
 }
@@ -1473,14 +1439,6 @@ void displayProduct(const Product& product) {
         cout << "| Name      : " << left << setw(55) << product.product_name << "|" << endl;
         cout << "| Category  : " << left << setw(55) << product.category << "|" << endl;
         cout << "| Price     : RM " << left << setw(52) << fixed << setprecision(2) << product.price << "|" << endl;
-        if (product.stock <= 0) {
-            cout << "| WARNING   : SORRY! THIS PRODUCT IS CURRENTLY OUT OF STOCK!         |" << endl;
-        } else {
-            cout << "| Stock     : " << left << setw(55) << product.stock << "|" << endl;
-            cout << "|                                                                    |" << endl;
-            cout << "|";
-            printWrappedText(product.description);
-        }
         cout << "----------------------------------------------------------------------" << endl;
     }
 }
@@ -1662,11 +1620,6 @@ void displayCart(Member loggedInMember) {
             cout << "| SORRY! This product is currently unavailable :(                |" << endl;
             cout << " ----------------------------------------------------------------" << endl;
         }
-        else if (quantity > cart[i].product.stock) {
-            total = 0.0;
-            cout << "| SORRY! Insufficient stock according to the ordered quantity :( |" << endl;
-            cout << " ----------------------------------------------------------------" << endl;
-        }
         else {
             cout << "| Price      : RM " << left << setw(47) << fixed << setprecision(2) << (price + addUp) << "|" << endl;
             cout << "| Quantity   : " << left << setw(50) << quantity << "|" << endl;
@@ -1749,11 +1702,6 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
         cout << "Error: Quantity must be positive." << endl;
         return;
     }
-    if (selected_product->stock < quantity) {
-        cout << "Error: Not enough stock for " << selected_product->product_name 
-             << ". Available: " << selected_product->stock << endl;
-        return;
-    }
     CartItem* cart = nullptr;
     int cartSize = 0;
     if (!loadCart(cart, cartSize, loggedInMember.member_id)) {
@@ -1774,11 +1722,6 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
         }
     }
     if (itemExists && existingItem) {
-        if (selected_product->stock < existingItem->quantity + quantity) {
-            cout << "Error: Adding " << quantity << " would exceed stock." << endl;
-            delete[] cart;
-            return;
-        }
         existingItem->quantity += quantity;
         existingItem->total = existingItem->quantity * existingItem->price;
     } else {
@@ -1802,7 +1745,6 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
         cart = newCart;
         cartSize++;
     }
-    selected_product->stock -= quantity;
     if (saveCart(cart, cartSize, loggedInMember.member_id)) {
         cout << "\nSuccessfully added " << quantity << " x " << selected_product->product_name << " to cart!" << endl;
         cin.ignore();
@@ -1849,9 +1791,6 @@ void deleteCart(CartItem*& cart, int& cartSize) {
             continue;
         }
         Product* product = binarySearchProduct(products, 0, productCount - 1, cart[choice-1].product_id, "product_id");
-        if (product) {
-            product->stock += cart[choice-1].quantity; 
-        }
         CartItem* newCart = new CartItem[cartSize - 1];
         int newIndex = 0;
         for (int i = 0; i < cartSize; i++) {
@@ -1915,7 +1854,6 @@ void editCart(CartItem*& cart, int& cartSize) {
             cout << "\nEditing: " << item.product_name << endl;
             cout << "Current quantity: " << item.quantity << endl;
             cout << "Current attributes: " << item.attribute1 << ", " << item.attribute2 << endl;
-            cout << "Available stock: " << product->stock << endl;
             cout << "\n_______________________________________________\n";
             cout << "| What would you like to edit?                |\n";
             cout << "| 1. Quantity                                 |\n";      
@@ -1946,7 +1884,6 @@ void editCart(CartItem*& cart, int& cartSize) {
             if (editQuantity) {
                 while (true) {
                     cout << "\nCurrent quantity: " << item.quantity << endl;
-                    cout << "Available stock: " << product->stock << endl;
                     cout << "Enter new quantity (0 to remove item): ";
                     string qtyStr;
                     getline(cin, qtyStr);
@@ -1964,7 +1901,6 @@ void editCart(CartItem*& cart, int& cartSize) {
                         continue;
                     }
                     if (newQty == 0) {
-                        product->stock += item.quantity; 
                         CartItem* newCart = new CartItem[cartSize - 1];
                         int newIndex = 0;
                         for (int i = 0; i < cartSize; i++) {
@@ -1985,13 +1921,6 @@ void editCart(CartItem*& cart, int& cartSize) {
                         cin.ignore();
                         return;
                     }
-                    if (newQty > product->stock + item.quantity) {
-                        cout << "Not enough stock available! Maximum available: " 
-                             << product->stock + item.quantity << endl;
-                        cout << "Press [ENTER] to continue.";
-                        cin.ignore();
-                        continue;
-                    }
                     break;
                 }
             }
@@ -2003,14 +1932,6 @@ void editCart(CartItem*& cart, int& cartSize) {
                 newAttribute2.attribute_name = tempAttr2.attribute_name;
                 newAttribute2.addUp = tempAttr2.addUp;
             }
-            if (editQuantity) {
-			    product->stock += item.quantity;
-			    if (newQty > 0) {
-			        product->stock -= newQty;
-			    }
-			    item.quantity = newQty;
-			}
-            item.quantity = newQty;
             if (editAttributes) {
                 item.attribute1 = newAttribute1;
                 item.attribute2 = newAttribute2.attribute_name;
@@ -2221,10 +2142,6 @@ void updateProductStock(CartItem* cart, int cartSize) {
     }
     for (int i = 0; i < cartSize; i++) {
         Product* product = binarySearchProduct(products, 0, productCount - 1, cart[i].product_id, "product_id");
-        if (product) {
-            product->stock -= cart[i].quantity;
-            if (product->stock < 0) product->stock = 0; 
-        }
     }
     ofstream file(PRODUCT_FILE);
     if (!file) {
@@ -2236,7 +2153,6 @@ void updateProductStock(CartItem* cart, int cartSize) {
              << "\"" << products[i].product_name << "\"" << ","
              << "\"" << products[i].category << "\"" << ","
              << fixed << setprecision(2) << products[i].price << ","
-             << products[i].stock << ","
              << "\"" << products[i].description << "\"" << ","
              << "\"" << products[i].status << "\"";
         if (i < productCount - 1) {
@@ -2263,12 +2179,6 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         if (!product || product->status == "Inactive") {
             cout << "------------------------------------------------------------------" << endl;
             cout << "| WARNING: Product '" << cart[i].product_name << "' is no longer available!" << endl;
-            cout << "------------------------------------------------------------------" << endl;
-            canProceed = false;
-        } else if (cart[i].quantity > product->stock) {
-            cout << "------------------------------------------------------------------" << endl;
-            cout << "| WARNING: Not enough stock for '" << cart[i].product_name << "'!" << endl;
-            cout << "| Available: " << product->stock << ", Requested: " << cart[i].quantity << endl;
             cout << "------------------------------------------------------------------" << endl;
             canProceed = false;
         } else {
@@ -2599,7 +2509,6 @@ void saveProduct(const Product& product) {
                 << "\"" << product.product_name << "\","
                 << "\"" << product.category << "\","
                 << fixed << setprecision(2) << product.price << ","
-                << product.stock << ","
                 << "\"" << product.description << "\","
                 << "\"" << product.status << "\"";
         outFile.close();
@@ -2620,8 +2529,8 @@ string getNextProductId() {
     }
     return to_string(lastId);
 }
-
 void addProduct(){
+	Products products;
 	string product_id = getNextProductId();
     string status = "Active";
     string product_name, category, price, stock, description;
@@ -2652,26 +2561,35 @@ void addProduct(){
             cout << "Name cannot be empty.\n";
             continue;
         }
-        if (!valid || letterCount < 5) {
+        if (!valid || letterCount < 3 || letterCount > 100) {
             cout << "Invalid name! Please enter a valid name.\n";
             continue;
         }
+        if (!products.productNameExists(product_name)){
+        	cout << "This product name already exist, please use the different name.\n";
+        	continue;
+		}
         break;
     }
     while(true){
-    	cout << "\nSelect category:\n";
+    	cout << "\nSelect category\n";
     	for (int i = 0; i < 3; ++i) {
             cout << i + 1 << ". " << categories[i] << "\n";
         }
         cout << "Enter choice (1-3):";
-        cin >> choice;
-        cin.ignore();
-    	if (choice >= 1 && choice <= 3) {
-            category = categories[choice - 1];
-            break;
-        } else {
-            cout << "Invalid choice. Please enter 1, 2, or 3.\n";
-        }
+        string input;
+	    getline(cin, input);
+	    try {
+	        choice = stoi(input);
+	        if (choice >= 1 && choice <= 3) {
+	            category = categories[choice - 1];
+	            break;
+	        } else {
+	            cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+	        }
+	    } catch (const invalid_argument& e) {
+	        cout << "Invalid input. Please enter a number.\n";
+	    }
 	}
 	while (true) {
         cout << "\nEnter price: ";
@@ -2679,32 +2597,23 @@ void addProduct(){
         try {
             if (stof(price) <= 0) throw invalid_argument("Price must be positive.");
             break;
-        } catch (...) {
+        } catch (const invalid_argument& e) {
             cout << "Invalid price! Please enter a valid positive number.\n";
         }
     }
-    while (true) {
-        cout << "\nEnter quantity: ";
-        getline(cin, stock);
-        try {
-            if (stoi(stock) < 0) throw invalid_argument("Quantity must be non-negative.");
-            break;
-        } catch (...) {
-            cout << "Invalid quantity! Please enter a valid number.\n";
-        }
-    }
-    cout << "\nEnter product description: ";
-    getline(cin, description);
-    
-	Product newProduct(product_id, product_name, category, stod(price), stoi(stock), description, status);
-	Products products;
+    while (true){
+    	cout << "\nEnter product description: ";
+    	getline(cin, description);
+    	if (description.empty()) {
+	        cout << "Description cannot be empty. Please try again.\n";
+	    } else {
+	        break;
+	    }
+	}
+	Product newProduct(product_id, product_name, category, stod(price), description, status);
+	
 	products.append(newProduct);
 	saveProduct(newProduct); 
-    ofstream idFile(PRODUCT_ID_FILE, ios::app);
-    if (idFile) {
-        idFile << product_id << "\n";
-        idFile.close();
-	}
 	cout << product_name << " added successfully!\n";
     cout << "Press [ENTER] to continue.";
     cin.ignore();
@@ -2717,7 +2626,6 @@ void displayProductAdmin(const Product& product) {
     cout << "| Name      : " << left << setw(55) << product.product_name << "|" << endl;
     cout << "| Category  : " << left << setw(55) << product.category << "|" << endl;
     cout << "| Price     : RM " << left << setw(52) << fixed << setprecision(2) << product.price << "|" << endl;
-    cout << "| Stock     : " << left << setw(55) << product.stock << "|" << endl;
     cout << "| Status    : " << left << setw(55) << product.status << "|" << endl;
     cout << "|                                                                    |" << endl;
     cout << "|";
@@ -2783,9 +2691,8 @@ void manageProduct() {
 	        cout << "| Options:                               |" << endl;
 	        cout << "| [1] Add New Product to This Category   |" << endl;
 	        cout << "| [2] Edit Existing Product              |" << endl;
-	        cout << "| [3] Restock Product                    |" << endl;
-	        cout << "| [4] Change Product Status              |" << endl;
-	        cout << "| [5] Return to Category Selection       |" << endl;
+	        cout << "| [3] Change Product Status              |" << endl;
+	        cout << "| [4] Return to Category Selection       |" << endl;
 	        cout << "|________________________________________|" << endl;
             string selection;
             cout << "\nEnter your choice: ";
@@ -2800,17 +2707,12 @@ void manageProduct() {
 	            //editProduct();
 	            return;
 	        }
-			else if(selection == "3") {
-	            clearScreen();
-	            //restockProduct();
-	            return;
-	        }
-	        else if(selection == "4") {
+	        else if(selection == "3") {
 	            clearScreen();
 	            //changeProductStatus();
 	            return;
 	        }
-	        else if(selection == "5") {
+	        else if(selection == "4") {
 	            clearScreen();
 	            manageProduct();
 	            return;
