@@ -3594,6 +3594,56 @@ void addProduct(){
     cin.ignore();
     manageProduct();
 }
+bool loadProductsIntoList(Products& productList) {
+    ifstream inFile(PRODUCT_FILE);
+    if (!inFile) return false;
+
+    string line;
+    while (getline(inFile, line)) {
+        if (line.empty()) continue;
+        
+        string parts[6];
+        if (splitAttribute(line, parts, 6) < 6) continue;
+        
+        for (int i = 0; i < 6; i++) {
+            parts[i] = removeQuotes(parts[i]);
+        }
+        
+        Product tempProduct;
+        tempProduct.product_id = parts[0];
+        tempProduct.product_name = parts[1];
+        tempProduct.category = parts[2];
+        try { tempProduct.price = stod(parts[3]); } catch (...) { tempProduct.price = 0; }
+        tempProduct.description = parts[4];
+        tempProduct.status = parts[5];
+        
+        productList.append(tempProduct);
+    }
+    inFile.close();
+    return true;
+}
+bool saveProductList(const Products& productList) {
+    ofstream outFile(PRODUCT_FILE);
+    if (!outFile) return false;
+
+    Node<Product>* current = productList.getHead();
+    bool firstLine = true;
+    while (current != nullptr) {
+        if (!firstLine) outFile << "\n";
+        
+        outFile << current->data.product_id << ","
+               << "\"" << current->data.product_name << "\","
+               << "\"" << current->data.category << "\","
+               << fixed << setprecision(2) << current->data.price << ","
+               << "\"" << current->data.description << "\","
+               << "\"" << current->data.status << "\"";
+        
+        current = current->next;
+        firstLine = false;
+    }
+    outFile.close();
+    return true;
+}
 void editProduct(const string& currentCategory) {
     string selection, new_name, price_input, status_input, new_status, new_description;
     string new_category = currentCategory;
