@@ -3645,11 +3645,9 @@ bool saveProductList(const Products& productList) {
     return true;
 }
 void editProduct(const string& currentCategory) {
-    string selection, new_name, price_input, status_input, new_status, new_description;
-    string new_category = currentCategory;
+    string selection, new_name,category_input, new_category, price_input, status_input, new_status, new_description;
     double new_price;
     string categories[] = {"Pizza", "Side", "Beverage"};
-    string input;
     int choice;
 
     cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
@@ -3680,31 +3678,9 @@ void editProduct(const string& currentCategory) {
     cout << "\nEditing product: " << productToEdit->product_name << endl;
 	cout << "[Press ENTER to keep current data]"<< endl;
 	Products productList;
-    ifstream inFile(PRODUCT_FILE);
-    if (inFile) {
-        string line;
-        while (getline(inFile, line)) {
-            if (line.empty()) continue;
-            
-            string parts[6];
-            int fieldsFound = splitAttribute(line, parts, 6);
-            if (fieldsFound < 6) continue;
-            
-            for (int i = 0; i < 6; i++) {
-                parts[i] = removeQuotes(parts[i]);
-            }
-            
-            Product tempProduct;
-            tempProduct.product_id = parts[0];
-            tempProduct.product_name = parts[1];
-            tempProduct.category = parts[2];
-            try { tempProduct.price = stod(parts[3]); } catch (...) { tempProduct.price = 0; }
-            tempProduct.description = parts[4];
-            tempProduct.status = parts[5];
-            
-            productList.append(tempProduct);
-        }
-        inFile.close();
+    if (!loadProductsIntoList(productList)) {
+        cout << "Error loading products!\n";
+        return;
     }
     while (true) {
         cout << "\nEnter new name: ";
@@ -3743,15 +3719,15 @@ void editProduct(const string& currentCategory) {
             cout << i + 1 << ". " << categories[i] << "\n";
         }
         cout << "\nEnter new category (1-3): ";
-        getline(cin, input);
+        getline(cin, category_input);
 
-        if (input.empty()) {
+        if (category_input.empty()) {
             new_category = productToEdit->category;
             break;
         }
 
         try {
-            choice = stoi(input);
+            choice = stoi(category_input);
             if (choice >= 1 && choice <= 3) {
                 new_category = categories[choice - 1];
                 break;
@@ -3792,16 +3768,16 @@ void editProduct(const string& currentCategory) {
         cout << "\nSelect status:\n";
         cout<<"1. Active"<< endl;
         cout<<"2. Inactive"<<endl;
-        cout << "Enter new status (1 or 2): ";
-        getline(cin, input);
+        cout << "\nEnter new status (1 or 2): ";
+        getline(cin, status_input);
 
-        if (input.empty()) {
+        if (status_input.empty()) {
             new_status = productToEdit->status;
             break;
         }
 
         try {
-            choice = stoi(input);
+            choice = stoi(status_input);
             if (choice == 1) {
                 new_status = "Active";
                 break;
@@ -3818,49 +3794,29 @@ void editProduct(const string& currentCategory) {
         }
     }
 
-    Product editProduct(product_id, new_name, new_category, new_price, new_description, new_status);
     Node<Product>* current = productList.getHead();
     while (current != nullptr) {
         if (current->data.product_id == product_id) {
-            current->data.product_name = new_name;
-            current->data.category = new_category;
-            current->data.price = new_price;
-            current->data.description = new_description;
-            current->data.status = new_status;
+            if (!new_name.empty()) current->data.product_name = new_name;
+            if (!new_category.empty()) current->data.category = new_category;
+            if (new_price >= 0) current->data.price = new_price;
+            if (!new_description.empty()) current->data.description = new_description;
             break;
         }
         current = current->next;
     }
 
-    ofstream outFile(PRODUCT_FILE);
-    if (outFile) {
-        current = productList.getHead();
-        bool firstLine = true;
-        while (current != nullptr) {
-            if (!firstLine) outFile << "\n";
-            
-            outFile << current->data.product_id << ","
-                   << "\"" << current->data.product_name << "\","
-                   << "\"" << current->data.category << "\","
-                   << fixed << setprecision(2) << current->data.price << ","
-                   << "\"" << current->data.description << "\","
-                   << "\"" << current->data.status << "\"";
-            
-            current = current->next;
-            firstLine = false;
-        }
-        outFile.close();
-        cout << "\nProduct updated successfully!\n";
+    // Save the updated list
+    if (!saveProductList(productList)) {
+        cout << "Error saving products!\n";
     } else {
-        cout << "\nError saving changes to file!\n";
+        cout << "\nProduct updated successfully!\n";
     }
 
     cout << "Press [ENTER] to continue.";
     cin.ignore();
     manageProduct();
 }
-
-
 void displayProductAdmin(const Product& product) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
