@@ -1,8 +1,6 @@
-ORD1,U0002,9/6/2025 12:23:57,433.19
-120,Smoky Chicken,1,37.59,Cheesy Crust,Large
-132,Minute Maid Plus Orange,2,9.70,Cold,Tin
-151,Snackbox 1,10,39.90,Spicy Nacho Cheese Dip,4 pax
+ORD1,U0002,2025-06-12 17:58:16,27.18,Cash
+119,Tangy Tuna,2,13.59,Cheesy Crust,Personal
 
-ORD2,U0002,10/6/2025 15:23:57,129.11
-120,Smoky Chicken,10,13.59,Cheesy Crust,Personal
-
+ORD2,U0002,2025-06-12 18:06:28,17.80,Credit Card
+130,Peach Tea,1,6.90,Cold,Bottle
+150,Nacho Cheese Ball,1,10.90,Garlic Aioli Dip,1 pax
