@@ -470,15 +470,6 @@ void saveFeedbackToFile(const RatingFeedback& feedback) {
     }
 }
 
-// Global variables
-MemberLinkedList memberList;
-AdminLinkedList adminList;
-RatingFeedbackLinkedList feedbackList;
-Member loggedInMember;
-Admin loggedInAdmin;
-Product* products = nullptr;
-int productCount = 0;
-
 // Function Prototype
 void mainMenu();
 void memberMenu(Member loggedInMember);
@@ -503,6 +494,140 @@ void submitRatingFeedback(const string& member_id);
 string getCurrentDateTime();
 void manageRating();
 void manageProduct(); 
+
+
+class Order {
+    public:
+        string orderId;
+        string memberId;
+        string date;
+        double totalAmount;
+        string paymentMethod;
+        CartItem* items;
+        int itemCount;
+    public:
+        Order(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+        : orderId(id), memberId(memId), date(dt), totalAmount(total), itemCount(cartSize) {
+            items = new CartItem[cartSize];
+            for (int i = 0; i < cartSize; i++) {
+                items[i] = cart[i];
+            }
+        }
+        virtual ~Order() {
+            delete[] items;
+        }
+        virtual void displayReceipt() const {
+            cout << "------------------------------------------------------------------" << endl;
+            cout << "                              RECEIPT                             " << endl;
+            for (int i = 0; i < itemCount; ++i) {
+                cout << "------------------------------------------------------------------" << endl;
+                cout << "Item        : " << items[i].attribute2 << " " << items[i].product_name << " (" << items[i].attribute1 << ")" << endl;
+                cout << "Price       : RM " << fixed << setprecision(2) << (items[i].price + items[i].addUp) << endl;
+                cout << "Quantity    : " << items[i].quantity << endl;
+                cout << "Total       : RM " << fixed << setprecision(2) << items[i].total << endl;
+            }
+            cout << "==================================================================" << endl;
+            cout << "Payment Amount: RM " << fixed << setprecision(2) << totalAmount << endl;
+            cout << "==================================================================" << endl;
+        }
+        virtual void processPayment() = 0; 
+        friend void recordPurchase(Order* order, const string& paymentMethod); 
+};
+void recordPurchase(Order* order, const string& paymentMethod) {
+	order->paymentMethod = paymentMethod;
+    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
+    if (file) {
+        string datetime = getCurrentDateTime(); 
+        file << order->orderId << "," << order->memberId << "," << datetime << "," 
+             << fixed << setprecision(2) << order->totalAmount << "," << paymentMethod << "\n";
+        for (int i = 0; i < order->itemCount; i++) {
+            file << order->items[i].product_id << "," << order->items[i].product_name << "," 
+                << order->items[i].quantity << "," << (order->items[i].price + order->items[i].addUp) << ","
+                << order->items[i].attribute1 << "," << order->items[i].attribute2 << "\n"; 
+        }
+        file << "\n"; 
+        file.close();
+    }
+}
+class CashOrder : public Order {
+    private:
+        double cashReceived;
+        double change;
+    public:
+        CashOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+        : Order(id, memId, dt, total, cart, cartSize), cashReceived(0), change(0) {}
+        void displayReceipt() const override {
+            Order::displayReceipt();
+            cout << "Cash Received: RM " << fixed << setprecision(2) << cashReceived << endl;
+            if (change > 0) {
+                cout << "Change       : RM " << fixed << setprecision(2) << change << endl;
+            }
+        }
+        void processPayment() override {
+            cout << "\nCash  : RM ";
+            cin >> cashReceived;	
+            while(cashReceived < totalAmount) {
+                cout << "Your cash is not enough!";
+                cout << "\nCash  : RM ";
+                cin >> cashReceived;	
+            }
+            if(cashReceived > totalAmount) {
+                change = cashReceived - totalAmount;
+                cout << "Change: RM "<< change;
+            }
+            cout << "\n\nProcessing payment";
+            for (int i = 0; i < 5; ++i) {
+                cout << ".";
+            }
+            cout << "\nPayment successful! Thank you for your purchase.";
+        }
+};
+class DebitCreditCardOrder : public Order {
+private:
+    string cardNumber;
+    string expiryDate;
+    string cvv;
+public:
+    DebitCreditCardOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+    : Order(id, memId, dt, total, cart, cartSize) {}
+
+    void processPayment() override {
+        cout << "Credit card number (13-16 digits): ";
+        cin >> cardNumber;
+        while (!isValidCardNumber(cardNumber)) {
+            cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
+            cin >> cardNumber;
+        }
+        cout << "\nExpiry date (MM/YY): ";
+        cin >> expiryDate;
+        while (!isValidExpiryDate(expiryDate)) {
+            cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
+            cin >> expiryDate;
+        }
+        cout << "\nCVV: ";
+        cin >> cvv;
+        while (!isValidCVV(cvv)) {
+            cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
+            cin >> cvv;
+        }
+        cout << "\n\nProcessing payment...";
+        cout << "\nValidating card details";
+        for (int i = 0; i < 5; ++i) {
+            cout << ".";
+        }
+        cout << "\n\nPayment successful! Thank you for your purchase.";
+    }
+};
+
+// Global variables
+MemberLinkedList memberList;
+AdminLinkedList adminList;
+RatingFeedbackLinkedList feedbackList;
+Member loggedInMember;
+Admin loggedInAdmin;
+Product* products = nullptr;
+int productCount = 0;
+
 
 // Helper functions
 //function to refresh the screen
@@ -653,6 +778,41 @@ int partitionCartItem(CartItem* arr, int low, int high, const string& key) {
     return i + 1;
 }
 
+int partitionOrder(Order** arr, int low, int high, const string& key, bool reverse) {
+    Order* pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        bool shouldSwap = false;
+        if (key == "datetime") {
+            // sorting logic depends on the 'reverse' flag
+            if (reverse) { // newest first (descending)
+                shouldSwap = arr[j]->date > pivot->date;
+            } else {       // oldest first (ascending)
+                shouldSwap = arr[j]->date < pivot->date;
+            }
+        } else if (key == "order_id") {
+            // default ascending sort for order ID
+            shouldSwap = arr[j]->orderId < pivot->orderId;
+        }
+
+        if (shouldSwap) {
+            i++;
+            // swap the pointers
+            Order* temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+    }
+
+    // place the pivot in its correct sorted position
+    Order* temp = arr[i + 1];
+    arr[i + 1] = arr[high];
+    arr[high] = temp;
+
+    return i + 1;
+}
+
 /*Main recursive quicksort function
   ==============================================================
     1. It gets the pivot for the array/subarray
@@ -680,6 +840,14 @@ void quickSortCartItem(CartItem* arr, int low, int high, const string& key) {
         quickSortCartItem(arr, low, pi - 1, key);
         //sort the right side of the pivot
         quickSortCartItem(arr, pi + 1, high, key);
+    }
+}
+
+void quickSortOrder(Order** arr, int low, int high, const string& key, bool reverse = false) {
+    if (low < high) {
+        int pi = partitionOrder(arr, low, high, key, reverse);
+        quickSortOrder(arr, low, pi - 1, key, reverse);
+        quickSortOrder(arr, pi + 1, high, key, reverse);
     }
 }
 
@@ -730,6 +898,21 @@ CartItem* binarySearchCartItem(CartItem* arr, int low, int high, const string& t
         else high = mid - 1;
     }
     return nullptr;
+}
+
+Order* binarySearchOrder(Order** arr, int first, int last, const string& target, const string& key) {
+    while (first <= last) {
+        int mid = first + (last - first) / 2;
+        string current;
+
+        if (key == "order_id") current = arr[mid]->orderId;
+        else if (key == "datetime") current = arr[mid]->date;
+
+        if (current == target) return arr[mid];        
+        else if (current < target) first = mid + 1;    
+        else last = mid - 1;                           
+    }
+    return nullptr; 
 }
 
 int partitionRatingFeedback(RatingFeedback* arr, int low, int high, const string& key, bool reverse){
@@ -2708,126 +2891,6 @@ bool isValidCVV(const string& cvv) {
     }
     return true;
 }
-class Order {
-    protected:
-        string orderId;
-        string memberId;
-        string date;
-        double totalAmount;
-        CartItem* items;
-        int itemCount;
-    public:
-        Order(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
-        : orderId(id), memberId(memId), date(dt), totalAmount(total), itemCount(cartSize) {
-            items = new CartItem[cartSize];
-            for (int i = 0; i < cartSize; i++) {
-                items[i] = cart[i];
-            }
-        }
-        virtual ~Order() {
-            delete[] items;
-        }
-        virtual void displayReceipt() const {
-            cout << "------------------------------------------------------------------" << endl;
-            cout << "                              RECEIPT                             " << endl;
-            for (int i = 0; i < itemCount; ++i) {
-                cout << "------------------------------------------------------------------" << endl;
-                cout << "Item        : " << items[i].attribute2 << " " << items[i].product_name << " (" << items[i].attribute1 << ")" << endl;
-                cout << "Price       : RM " << fixed << setprecision(2) << (items[i].price + items[i].addUp) << endl;
-                cout << "Quantity    : " << items[i].quantity << endl;
-                cout << "Total       : RM " << fixed << setprecision(2) << items[i].total << endl;
-            }
-            cout << "==================================================================" << endl;
-            cout << "Payment Amount: RM " << fixed << setprecision(2) << totalAmount << endl;
-            cout << "==================================================================" << endl;
-        }
-        virtual void processPayment() = 0; 
-        friend void recordPurchase(Order* order, const string& paymentMethod); 
-};
-void recordPurchase(Order* order, const string& paymentMethod) {
-    ofstream file(PURCHASE_HISTORY_FILE, ios::app);
-    if (file) {
-        string datetime = getCurrentDateTime(); 
-        file << order->orderId << "," << order->memberId << "," << datetime << "," 
-             << fixed << setprecision(2) << order->totalAmount << "," << paymentMethod << "\n";
-        for (int i = 0; i < order->itemCount; i++) {
-            file << order->items[i].product_id << "," << order->items[i].product_name << "," 
-                << order->items[i].quantity << "," << (order->items[i].price + order->items[i].addUp) << ","
-                << order->items[i].attribute1 << "," << order->items[i].attribute2 << "\n"; 
-        }
-        file << "\n"; 
-        file.close();
-    }
-}
-class CashOrder : public Order {
-    private:
-        double cashReceived;
-        double change;
-    public:
-        CashOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
-        : Order(id, memId, dt, total, cart, cartSize), cashReceived(0), change(0) {}
-        void displayReceipt() const override {
-            Order::displayReceipt();
-            cout << "Cash Received: RM " << fixed << setprecision(2) << cashReceived << endl;
-            if (change > 0) {
-                cout << "Change       : RM " << fixed << setprecision(2) << change << endl;
-            }
-        }
-        void processPayment() override {
-            cout << "\nCash  : RM ";
-            cin >> cashReceived;	
-            while(cashReceived < totalAmount) {
-                cout << "Your cash is not enough!";
-                cout << "\nCash  : RM ";
-                cin >> cashReceived;	
-            }
-            if(cashReceived > totalAmount) {
-                change = cashReceived - totalAmount;
-                cout << "Change: RM "<< change;
-            }
-            cout << "\n\nProcessing payment";
-            for (int i = 0; i < 5; ++i) {
-                cout << ".";
-            }
-            cout << "\nPayment successful! Thank you for your purchase.";
-        }
-};
-class DebitCreditCardOrder : public Order {
-private:
-    string cardNumber;
-    string expiryDate;
-    string cvv;
-public:
-    DebitCreditCardOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
-    : Order(id, memId, dt, total, cart, cartSize) {}
-
-    void processPayment() override {
-        cout << "Credit card number (13-16 digits): ";
-        cin >> cardNumber;
-        while (!isValidCardNumber(cardNumber)) {
-            cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
-            cin >> cardNumber;
-        }
-        cout << "\nExpiry date (MM/YY): ";
-        cin >> expiryDate;
-        while (!isValidExpiryDate(expiryDate)) {
-            cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
-            cin >> expiryDate;
-        }
-        cout << "\nCVV: ";
-        cin >> cvv;
-        while (!isValidCVV(cvv)) {
-            cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
-            cin >> cvv;
-        }
-        cout << "\n\nProcessing payment...";
-        cout << "\nValidating card details";
-        for (int i = 0; i < 5; ++i) {
-            cout << ".";
-        }
-        cout << "\n\nPayment successful! Thank you for your purchase.";
-    }
-};
 void proceedToPayment(CartItem* cart, int cartSize) {
     if (cartSize == 0) {
         cout << "Your cart is empty. Please add items to your cart before proceeding to payment.\n";
@@ -2921,6 +2984,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         mainMenu();
     }
 }
+
 void viewPurchaseHistory() {
     if (loggedInMember.member_id.empty()) {
         cout << "Error: No user logged in." << endl;
@@ -2928,84 +2992,174 @@ void viewPurchaseHistory() {
         cin.ignore();
         return;
     }
+
     ifstream file(PURCHASE_HISTORY_FILE);
     if (!file) {
         cout << "No purchase history found." << endl;
         cout << "Press [ENTER] to continue.";
         cin.ignore();
+        memberMenu(loggedInMember);
         return;
     }
-    clearScreen();
-    cout << "==================================================================" << endl;
-    cout << "|                      PURCHASE HISTORY                          |" << endl;
-    cout << "==================================================================" << endl;
-    string line;
-    bool foundPurchases = false;
+
+    const int MAX_ORDERS = 100;
+    Order* orders[MAX_ORDERS]; // An array of pointers to Order objects
     int orderCount = 0;
-    while (getline(file, line)) {
+    string line;
+
+    while (orderCount < MAX_ORDERS && getline(file, line)) {
         if (line.empty()) continue;
+
+        // Check if the line is an order header by counting commas
         int commaCount = 0;
-        for (char ch : line) {
-            if (ch == ',') {
-                commaCount++;
-            }
+        for (int i = 0; i < line.length(); i++) {
+            if (line[i] == ',') commaCount++;
         }
-        if (commaCount == 4) {
+
+        if (commaCount == 4) { // This is an order header line
             stringstream ss(line);
-            string orderId, memberId, date, paymentMethod;
-            double total;
+            string orderId, memberId, datetime, paymentMethod, totalAmountStr;
+            double totalAmount;
+
             getline(ss, orderId, ',');
             getline(ss, memberId, ',');
-            getline(ss, date, ',');
-            ss >> total;
-            ss.ignore();
+            getline(ss, datetime, ',');
+            getline(ss, totalAmountStr, ',');
             getline(ss, paymentMethod);
+
+            try {
+                totalAmount = stod(totalAmountStr);
+        	}
+           	catch (const invalid_argument& e) {
+			    totalAmount = 0.0;
+			}
+			catch (const out_of_range& e) {
+			    totalAmount = 0.0;
+			}
+
+            // Only process records for the currently logged-in member
             if (memberId == loggedInMember.member_id) {
-                foundPurchases = true;
-                orderCount++;
-                cout << "------------------------------------------------------------------" << endl;
-                cout << "| Order ID: " << left << setw(53) << orderId << "|" << endl;
-                cout << "| Date    : " << left << setw(53) << date << "|" << endl;
-                cout << "| Payment : " << left << setw(53) << paymentMethod << "|" << endl;
-				cout << "------------------------------------------------------------------" << endl;
-                while (getline(file, line) && !line.empty()) {
+                // Create a temporary array to hold items for this specific order
+                const int MAX_ITEMS_PER_ORDER = 20;
+                CartItem tempItems[MAX_ITEMS_PER_ORDER];
+                int itemCount = 0;
+
+                // Read all item lines for this order until an empty line
+                while (itemCount < MAX_ITEMS_PER_ORDER && getline(file, line) && !line.empty()) {
                     stringstream itemSS(line);
-                    string productId, productName, attribute1, attribute2;
-                    int quantity;
-                    double price;
-                    getline(itemSS, productId, ',');
-                    getline(itemSS, productName, ',');
-                    itemSS >> quantity;
-                    itemSS.ignore(); 
-                    itemSS >> price;
-                    itemSS.ignore(); 
-                    getline(itemSS, attribute1, ',');
-                    getline(itemSS, attribute2);
-                    cout << " Product ID   : " << productId << endl;
-                    cout << " Product Name : " << productName << endl;
-                    cout << " Attribute 1  : " << attribute1 << endl;
-                    cout << " Attribute 2  : " << attribute2 << endl;
-                    cout << " Quantity     : " << quantity << endl;
-                    cout << " Price        : RM " << fixed << setprecision(2) << price << endl;
-                    cout << "------------------------------------------------------------------" << endl;
+                    string qtyStr, priceStr;
+
+                    getline(itemSS, tempItems[itemCount].product_id, ',');
+                    getline(itemSS, tempItems[itemCount].product_name, ',');
+                    getline(itemSS, qtyStr, ',');
+                    getline(itemSS, priceStr, ',');
+                    getline(itemSS, tempItems[itemCount].attribute1, ',');
+                    getline(itemSS, tempItems[itemCount].attribute2);
+                    
+                    try {
+					    tempItems[itemCount].quantity = stoi(qtyStr);
+					    tempItems[itemCount].price = stod(priceStr);
+					} catch (const invalid_argument& e) {
+					    tempItems[itemCount].quantity = 0;
+					    tempItems[itemCount].price = 0.0;
+					} catch (const out_of_range& e) {
+					    tempItems[itemCount].quantity = 0;
+					    tempItems[itemCount].price = 0.0;
+					}
+                    itemCount++;
                 }
-                cout << "| Total: RM " << left << setw(53) << fixed << setprecision(2) << total << "|" << endl;
-                cout << "==================================================================" << endl << endl;
+
+                // create a new Order object (for CashOrder)
+                // to hold the data we just read. this allocates the necessary memory.
+                orders[orderCount] = new CashOrder(orderId, memberId, datetime, totalAmount, tempItems, itemCount);
+                orders[orderCount]->paymentMethod = paymentMethod;
+                orderCount++;
             } else {
+                // If it's not our user's record, skip its item lines
                 while (getline(file, line) && !line.empty()) {
-                    continue;
+                    // This loop consumes the item lines to get to the next order
                 }
             }
         }
     }
     file.close();
-    if (!foundPurchases) {
+
+    // sort the array of order pointers by date, newest first.
+    quickSortOrder(orders, 0, orderCount - 1, "datetime", true);
+
+    // display the sorted history
+    clearScreen();
+    cout << "==================================================================" << endl;
+    cout << "|                      PURCHASE HISTORY                          |" << endl;
+    cout << "==================================================================" << endl;
+
+    if (orderCount == 0) {
         cout << "|                  No purchase history found.                    |" << endl;
         cout << "==================================================================" << endl;
+    } else {
+        for (int i = 0; i < orderCount; ++i) {
+        	cout << "------------------------------------------------------------------" << endl;
+            cout << "| Order ID: " << left << setw(53) << orders[i]->orderId << "|" << endl;
+            cout << "| Date    : " << left << setw(53) << orders[i]->date << "|" << endl;
+            cout << "| Payment : " << left << setw(53) << orders[i]->paymentMethod << "|" << endl;
+            cout << "------------------------------------------------------------------" << endl;
+            for (int j = 0; j < orders[i]->itemCount; ++j) {
+                cout << " Product ID   : " << orders[i]->items[j].product_id << endl;
+                cout << " Product Name : " << orders[i]->items[j].product_name << endl;
+                cout << " Attribute 1  : " << orders[i]->items[j].attribute1 << endl;
+                cout << " Attribute 2  : " << orders[i]->items[j].attribute2 << endl;
+                cout << " Quantity     : " << orders[i]->items[j].quantity << endl;
+                cout << " Price        : RM " << fixed << setprecision(2) << orders[i]->items[j].price << endl;
+                cout << "------------------------------------------------------------------" << endl;
+            }
+            
+
+            cout << "------------------------------------------------------------------" << endl;
+            cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << orders[i]->totalAmount << "|" << endl;
+            cout << "==================================================================" << endl << endl;
+        }
+        char choice;
+        cout << "\nDo you want to search for a specific Order ID? (Y/N): ";
+        cin >> choice;
+        if (toupper(choice) == 'Y') {
+            // sort by order_id for binary search
+            quickSortOrder(orders, 0, orderCount - 1, "order_id");
+
+            string searchId;
+            cout << "\nEnter Order ID to search: ";
+            cin >> searchId;
+
+            Order* found = binarySearchOrder(orders, 0, orderCount - 1, searchId, "order_id");
+
+            if (found != nullptr) {
+                cout << "------------------------------------------------------------------" << endl;
+	            cout << "| Order ID: " << left << setw(53) << found->orderId << "|" << endl;
+	            cout << "| Date    : " << left << setw(53) << found->date << "|" << endl;
+	            cout << "| Payment : " << left << setw(53) << found->paymentMethod << "|" << endl;
+	            cout << "------------------------------------------------------------------" << endl;
+                cout << " Product ID   : " << found->items->product_id << endl;
+                cout << " Product Name : " << found->items->product_name << endl;
+                cout << " Attribute 1  : " << found->items->attribute1 << endl;
+                cout << " Attribute 2  : " << found->items->attribute2 << endl;
+                cout << " Quantity     : " << found->items->quantity << endl;
+                cout << " Price        : RM " << fixed << setprecision(2) << found->items->price << endl;
+                cout << "------------------------------------------------------------------" << endl;
+                cout << "------------------------------------------------------------------" << endl;
+	            cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << found->totalAmount << "|" << endl;
+	            cout << "==================================================================" << endl << endl;
+            } else {
+                cout << "\nOrder ID " << searchId << " not found in your purchase history.\n";
+            }
+    	}
     }
-    cout << "Press [ENTER] to return to menu.";
+    for (int i = 0; i < orderCount; ++i) {
+        delete orders[i];
+    }
+
+    cout << "Press [ENTER] to return to the menu.";
     cin.ignore();
-	clearScreen();
+    cin.get();
+    clearScreen();
     memberMenu(loggedInMember);
 }
 string getCurrentDateTime() {
