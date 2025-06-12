@@ -143,11 +143,14 @@ struct CartItem {
     }
 };
 
+// Structure to store rating and feedback data
 struct RatingFeedback {
     string member_id;
     int rating; 
     string feedback_text;
     string datetime; 
+    
+    // Constructor with default parameters
     RatingFeedback(string m_id = "", int r = 0, string fb_text = "", string dt = "") {
         member_id = m_id;
         rating = r;
@@ -432,31 +435,41 @@ public:
     }
 };
 
+// Derived class for rating feedback linked list
 class RatingFeedbackLinkedList : public LinkedList<RatingFeedback> {
 public:
+	//open feedback.txt in read mode
     void loadFeedback() {
         ifstream file(FEEDBACK_FILE);
+        //if file doesn't exist, create an empty file and return
         if (!file) {
             ofstream createFile(FEEDBACK_FILE);
             createFile.close();
             return;
         }
+        // clear current list before loading
         clear();
         string line;
+        // read feedback data line by line
         while (getline(file, line)) {
             if (line.empty()) continue;
-            RatingFeedback feedback;
+			RatingFeedback feedback;
             feedback.member_id = line;
             getline(file, line);
+            // convert rating to int
             feedback.rating = stoi(line);
             getline(file, feedback.feedback_text);
             getline(file, feedback.datetime); 
+            // add feedback object to the linked list
             append(feedback);
         }
         file.close();
     }
+    // declare friend function to allow access to saveFeedbackToFile function
     friend void saveFeedbackToFile(const RatingFeedback& feedback);
 };
+
+// save feedback to file
 void saveFeedbackToFile(const RatingFeedback& feedback) {
     ofstream file(FEEDBACK_FILE, ios::app); 
     if (file) {
@@ -506,16 +519,22 @@ class Order {
         CartItem* items;
         int itemCount;
     public:
+        // Constructor to initialize an order
         Order(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
         : orderId(id), memberId(memId), date(dt), totalAmount(total), itemCount(cartSize) {
+            // allocate memory for cart items
             items = new CartItem[cartSize];
             for (int i = 0; i < cartSize; i++) {
                 items[i] = cart[i];
             }
         }
+
+        // virtual destructor to release allocated memory
         virtual ~Order() {
             delete[] items;
         }
+
+        // virtual function to display the receipt
         virtual void displayReceipt() const {
             cout << "------------------------------------------------------------------" << endl;
             cout << "                              RECEIPT                             " << endl;
@@ -530,11 +549,17 @@ class Order {
             cout << "Payment Amount: RM " << fixed << setprecision(2) << totalAmount << endl;
             cout << "==================================================================" << endl;
         }
+        // pure virtual function to process payment
         virtual void processPayment() = 0; 
+        
+        // friend function to allow access to private/protected members
         friend void recordPurchase(Order* order, const string& paymentMethod); 
 };
+
+// save the order data to the file
 void recordPurchase(Order* order, const string& paymentMethod) {
-	order->paymentMethod = paymentMethod;
+	// assign payment method to the order
+    order->paymentMethod = paymentMethod;
     ofstream file(PURCHASE_HISTORY_FILE, ios::app);
     if (file) {
         string datetime = getCurrentDateTime(); 
@@ -549,32 +574,45 @@ void recordPurchase(Order* order, const string& paymentMethod) {
         file.close();
     }
 }
+
+// Derived class for handle cash payment
 class CashOrder : public Order {
     private:
         double cashReceived;
         double change;
     public:
+        // Constructor to initialize cash order
         CashOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
         : Order(id, memId, dt, total, cart, cartSize), cashReceived(0), change(0) {}
+        
+        // override displayReceipt() to include cash-specific details
         void displayReceipt() const override {
+            // call base displayReceipt()
             Order::displayReceipt();
             cout << "Cash Received: RM " << fixed << setprecision(2) << cashReceived << endl;
             if (change > 0) {
                 cout << "Change       : RM " << fixed << setprecision(2) << change << endl;
             }
         }
+
+        // override to handle payment process
         void processPayment() override {
             cout << "\nCash  : RM ";
             cin >> cashReceived;	
+
+            // ensure the cash is enough
             while(cashReceived < totalAmount) {
                 cout << "Your cash is not enough!";
                 cout << "\nCash  : RM ";
                 cin >> cashReceived;	
             }
+
+            // calculate the change
             if(cashReceived > totalAmount) {
                 change = cashReceived - totalAmount;
                 cout << "Change: RM "<< change;
             }
+
             cout << "\n\nProcessing payment";
             for (int i = 0; i < 5; ++i) {
                 cout << ".";
@@ -582,41 +620,51 @@ class CashOrder : public Order {
             cout << "\nPayment successful! Thank you for your purchase.";
         }
 };
-class DebitCreditCardOrder : public Order {
-private:
-    string cardNumber;
-    string expiryDate;
-    string cvv;
-public:
-    DebitCreditCardOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
-    : Order(id, memId, dt, total, cart, cartSize) {}
 
-    void processPayment() override {
-        cout << "Credit card number (13-16 digits): ";
-        cin >> cardNumber;
-        while (!isValidCardNumber(cardNumber)) {
-            cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
+// Derived class for handle debit/credit card payment
+class DebitCreditCardOrder : public Order {
+    private:
+        string cardNumber;
+        string expiryDate;
+        string cvv;
+    public:
+        // constructor to initialize card payment order
+        DebitCreditCardOrder(const string& id, const string& memId, const string& dt, double total, CartItem* cart, int cartSize)
+        : Order(id, memId, dt, total, cart, cartSize) {}
+
+        // override to handle card payment input and validation
+        void processPayment() override {
+            cout << "Credit card number (13-16 digits): ";
             cin >> cardNumber;
-        }
-        cout << "\nExpiry date (MM/YY): ";
-        cin >> expiryDate;
-        while (!isValidExpiryDate(expiryDate)) {
-            cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
+            // validate card number
+            while (!isValidCardNumber(cardNumber)) {
+                cout << "\nInvalid number. Please re-enter credit card number (13-16 digits): ";
+                cin >> cardNumber;
+            }
+
+            cout << "\nExpiry date (MM/YY): ";
             cin >> expiryDate;
-        }
-        cout << "\nCVV: ";
-        cin >> cvv;
-        while (!isValidCVV(cvv)) {
-            cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
+            // validate expiry date
+            while (!isValidExpiryDate(expiryDate)) {
+                cout << "\nInvalid date. Please re-enter expiry date (MM/YY): ";
+                cin >> expiryDate;
+            }
+
+            cout << "\nCVV: ";
             cin >> cvv;
+            // validate CVV
+            while (!isValidCVV(cvv)) {
+                cout << "\nInvalid CVV. Please re-enter CVV (3 or 4 digits): ";
+                cin >> cvv;
+            }
+
+            cout << "\n\nProcessing payment...";
+            cout << "\nValidating card details";
+            for (int i = 0; i < 5; ++i) {
+                cout << ".";
+            }
+            cout << "\n\nPayment successful! Thank you for your purchase.";
         }
-        cout << "\n\nProcessing payment...";
-        cout << "\nValidating card details";
-        for (int i = 0; i < 5; ++i) {
-            cout << ".";
-        }
-        cout << "\n\nPayment successful! Thank you for your purchase.";
-    }
 };
 
 // Global variables
@@ -778,24 +826,30 @@ int partitionCartItem(CartItem* arr, int low, int high, const string& key) {
     return i + 1;
 }
 
+// function to partition the Order array for quicksort based on date/order_id
 int partitionOrder(Order** arr, int low, int high, const string& key, bool reverse) {
+    // select the last element as pivot
     Order* pivot = arr[high];
+    
+    // index of the smaller element
     int i = low - 1;
 
+    // traverse from low to high - 1
     for (int j = low; j < high; j++) {
         bool shouldSwap = false;
+        
         if (key == "datetime") {
-            // sorting logic depends on the 'reverse' flag
-            if (reverse) { // newest first (descending)
+            // sort by date in ascending or descending order
+            if (reverse) { 
                 shouldSwap = arr[j]->date > pivot->date;
-            } else {       // oldest first (ascending)
+            } else {       
                 shouldSwap = arr[j]->date < pivot->date;
             }
         } else if (key == "order_id") {
             // default ascending sort for order ID
             shouldSwap = arr[j]->orderId < pivot->orderId;
         }
-
+        // if condition met, increment i and swap arr[i] with arr[j]
         if (shouldSwap) {
             i++;
             // swap the pointers
@@ -810,6 +864,7 @@ int partitionOrder(Order** arr, int low, int high, const string& key, bool rever
     arr[i + 1] = arr[high];
     arr[high] = temp;
 
+    // return the partition index
     return i + 1;
 }
 
@@ -843,10 +898,14 @@ void quickSortCartItem(CartItem* arr, int low, int high, const string& key) {
     }
 }
 
+// Quick Sort to sort order
 void quickSortOrder(Order** arr, int low, int high, const string& key, bool reverse = false) {
     if (low < high) {
+        //get the index of the pivot
         int pi = partitionOrder(arr, low, high, key, reverse);
+        // sort the part of the list that comes before the pivot
         quickSortOrder(arr, low, pi - 1, key, reverse);
+        // sort the part of the list that comes after the pivot
         quickSortOrder(arr, pi + 1, high, key, reverse);
     }
 }
@@ -900,6 +959,7 @@ CartItem* binarySearchCartItem(CartItem* arr, int low, int high, const string& t
     return nullptr;
 }
 
+// Binary Search to search order by id
 Order* binarySearchOrder(Order** arr, int first, int last, const string& target, const string& key) {
     while (first <= last) {
         int mid = first + (last - first) / 2;
@@ -912,6 +972,7 @@ Order* binarySearchOrder(Order** arr, int first, int last, const string& target,
         else if (current < target) first = mid + 1;    
         else last = mid - 1;                           
     }
+    //return pointer to null if no result found
     return nullptr; 
 }
 
@@ -2631,8 +2692,10 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
     delete[] cart;
 }
 
+// check if a string contains only digits 0-9
 bool isAllDigits(const string& str) {
     int len = str.length();
+    // empty input is not valid
     if (len == 0) {
         return false; 
     }
@@ -2641,13 +2704,19 @@ bool isAllDigits(const string& str) {
             return false;
         }
     }
+    // all characters are digits
     return true;
 }
+
+// function to delete the item in cart
 void deleteCart(CartItem*& cart, int& cartSize) {
     while (true) {
+        // ask user to enter item number 
         cout << "\nEnter the item number to delete (1-" << cartSize << ") or [0] to cancel: ";
         string choiceStr;
         getline(cin, choiceStr);
+
+        // check if input is a number
         bool isValid = isAllDigits(choiceStr);
         if (!isValid) {
         	cout << "\n________________________________________________________\n";
@@ -2655,42 +2724,60 @@ void deleteCart(CartItem*& cart, int& cartSize) {
 			cout << "|______________________________________________________|\n";
             continue;
         }
+
         int choice = stoi(choiceStr);
+
+        // if user want to cancel
         if (choice == 0) {
             return; 
         }
+
+        // check if the input is within the valid range
         if (choice < 1 || choice > cartSize) {
         	cout << "\n________________________________________________________\n";
 			cout << "|Invalid item number! Please try again.                |\n";
 			cout << "|______________________________________________________|\n";
             continue;
         }
+
+        // find the product by ID
         Product* product = binarySearchProduct(products, 0, productCount - 1, cart[choice-1].product_id, "product_id");
+        // create a new cart with one less item
         CartItem* newCart = new CartItem[cartSize - 1];
         int newIndex = 0;
+
         for (int i = 0; i < cartSize; i++) {
             if (i != choice - 1) {
                 newCart[newIndex++] = cart[i];
             }
         }
+
         delete[] cart;
         cart = newCart;
         cartSize--;
+
+        // save updated cart to file
         if (saveCart(cart, cartSize, loggedInMember.member_id)) {
             cout << "\nItem successfully removed from cart!" << endl;
         } else {
             cout << "\nError saving cart changes!" << endl;
         }
+
         cout << "\nPress [ENTER] to continue.";
         cin.ignore();
         break;
     }
 }
+
+// function to edit the cart item
 void editCart(CartItem*& cart, int& cartSize) {
     while (true) {
+        // ask user to enter the item number
         cout << "\nEnter the item number to edit (1-" << cartSize << ") or [0] to cancel: ";  
         string choiceStr;
         getline(cin, choiceStr);
+
+        // check if input is a number
         bool isValid = isAllDigits(choiceStr);
         if (!isValid) {
         	cout << "\n_______________________________________________\n";
@@ -2698,17 +2785,23 @@ void editCart(CartItem*& cart, int& cartSize) {
             cout << "|_____________________________________________|\n";
             continue;
         }
+
         int choice = stoi(choiceStr);
+        // if user want to cancel
         if (choice == 0) {
             return; 
         }
+
+        // check if the input is within the valid range
         if (choice < 1 || choice > cartSize) {
         	cout << "\n_______________________________________________\n";
             cout << "| Invalid item number! Please try again.      |\n";
             cout << "|_____________________________________________|\n";
             continue;
         }
+
         CartItem& item = cart[choice-1];
+        // find the product by ID
         Product* product = binarySearchProduct(products, 0, productCount - 1, item.product_id, "product_id");
         if (!product) {
             cout << "\n_______________________________________________\n";
@@ -2717,6 +2810,7 @@ void editCart(CartItem*& cart, int& cartSize) {
             cin.ignore();
             continue;
         }
+        // user cannot edit the inactive products
         if (product->status == "Inactive") {
             cout << "\n_______________________________________________\n";
             cout << "| ERROR: CANNOT EDIT INACTIVE PRODUCT         |\n";
@@ -2725,6 +2819,7 @@ void editCart(CartItem*& cart, int& cartSize) {
             cin.ignore();
             continue;
         }
+        // submenu for edit (have 3 choice)
         while (true) {
             cout << "\nEditing: " << item.product_name << endl;
             cout << "Current quantity: " << item.quantity << endl;
@@ -2736,19 +2831,25 @@ void editCart(CartItem*& cart, int& cartSize) {
             cout << "| 3. Both quantity and attributes             |\n";
             cout << "| 0. Cancel                                   |\n";
             cout << "|_____________________________________________|\n";
+            
             string editChoiceStr;
             cout << "Enter your choice: ";
             getline(cin, editChoiceStr);
+            
+            // validate user choice
             if (!isAllDigits(editChoiceStr)) {
                 cout << "\n_______________________________________________\n";
 		        cout << "| Invalid input! Please enter a number.       |\n";
 	            cout << "|_____________________________________________|\n";
                 continue;
             }
+
             int editChoice = stoi(editChoiceStr);
             if (editChoice == 0) {
                 break;
             }
+
+            // determine what needs to be edited
             bool editQuantity = (editChoice == 1 || editChoice == 3);
             bool editAttributes = (editChoice == 2 || editChoice == 3);
             int newQty = item.quantity;
@@ -2756,6 +2857,8 @@ void editCart(CartItem*& cart, int& cartSize) {
             Attribute2 newAttribute2;
             newAttribute2.attribute_name = item.attribute2;
             newAttribute2.addUp = item.addUp;
+            
+            // handle quantity update
             if (editQuantity) {
                 while (true) {
                     cout << "\nCurrent quantity: " << item.quantity << endl;
@@ -2768,6 +2871,7 @@ void editCart(CartItem*& cart, int& cartSize) {
                         cin.ignore();
                         continue;
                     }
+
                     newQty = stoi(qtyStr);
                     if (newQty < 0) {
                         cout << "Quantity cannot be negative!" << endl;
@@ -2775,6 +2879,7 @@ void editCart(CartItem*& cart, int& cartSize) {
                         cin.ignore();
                         continue;
                     }
+                    // if quantity is 0, it will remove item
                     if (newQty == 0) {
                         CartItem* newCart = new CartItem[cartSize - 1];
                         int newIndex = 0;
@@ -2799,7 +2904,10 @@ void editCart(CartItem*& cart, int& cartSize) {
                     break;
                 }
             }
+            // update quantity
             item.quantity = newQty;
+
+            // handle attribute update
             if (editAttributes) {
                 cout << "\nEditing attributes for: " << item.product_name << endl;
                 cout << "Current attributes: " << item.attribute1 << ", " << item.attribute2 << endl;
@@ -2808,15 +2916,21 @@ void editCart(CartItem*& cart, int& cartSize) {
                 newAttribute2.attribute_name = tempAttr2.attribute_name;
                 newAttribute2.addUp = tempAttr2.addUp;
             }
+
+            // Save new attributes to cart item
             if (editAttributes) {
                 item.attribute1 = newAttribute1;
                 item.attribute2 = newAttribute2.attribute_name;
                 item.addUp = newAttribute2.addUp;
             }
+
+            // recalculate total price
             item.total = (item.price + item.addUp) * newQty;
             cout << "Item updated successfully!" << endl;
             break;
         }
+        
+        // save the change to cart
         if (saveCart(cart, cartSize, loggedInMember.member_id)) {
             cout << "Cart updated successfully!" << endl;
         } else {
@@ -2827,26 +2941,36 @@ void editCart(CartItem*& cart, int& cartSize) {
         break;
     }
 }
+
+// generate a unique order id
 string generateOrderId() {
     ifstream file(ORDER_ID_FILE);
     int lastId = 0;
     if (file) {
+        // read the last used id
         file >> lastId;
         file.close();
     }
+    // increment order id
     lastId++;
+
     ofstream outFile(ORDER_ID_FILE);
     if (outFile) {
         outFile << lastId;
         outFile.close();
     }
+    // return the new order id as a string
     return "ORD" + to_string(lastId);
 }
+
+// clear the cart file after payment
 void clearCartFile(const string& member_id) {
     string cartFile = getCartFilename(member_id);
     ofstream file(cartFile);
     file.close();
 }
+
+// validate the length of the card number (between 13 and 16)
 bool isValidCardNumber(const string& cardNumber) {
     if (cardNumber.length() < 13 || cardNumber.length() > 16)
         return false;
@@ -2857,6 +2981,8 @@ bool isValidCardNumber(const string& cardNumber) {
     }
     return true;
 }
+
+// validate the expiry date in MM/YY format and ensure it does not expired
 bool isValidExpiryDate(const string& expiryDate) {
     if (expiryDate.length() != 5 || expiryDate[2] != '/') {
         return false;
@@ -2873,24 +2999,34 @@ bool isValidExpiryDate(const string& expiryDate) {
     if (month < 1 || month > 12) {
         return false;
     }
+    
     time_t now = time(0);
     tm *ltm = localtime(&now);
     int currentYear = ltm->tm_year % 100; 
     int currentMonth = ltm->tm_mon + 1;
+    
     if (year < currentYear || (year == currentYear && month < currentMonth)) {
         return false;
     }
     return true;
 }
+
+// validate the length of the CVV (3/4 digits)
 bool isValidCVV(const string& cvv) {
     if (cvv.length() != 3 && cvv.length() != 4)
         return false;
+    
     for (int i = 0; i < cvv.length(); ++i) {
         if (cvv[i] < '0' || cvv[i] > '9')
             return false;
     }
     return true;
 }
+
+// handle the process of validate cart, select payment and save the order
+// 1. if user's cart have inactive product, he/she cannot proceed to pay
+// 2. user can select the payment method
+// 3. after enter all info for payment method, it will save the order record to the purchase_history.txt
 void proceedToPayment(CartItem* cart, int cartSize) {
     if (cartSize == 0) {
         cout << "Your cart is empty. Please add items to your cart before proceeding to payment.\n";
@@ -2898,6 +3034,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         cin.ignore();
         return;
     }
+
     bool canProceed = true;
     double totalPayment = 0.00;
     clearScreen();
@@ -2906,6 +3043,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
     cout << "==================================================================" << endl;
     for (int i = 0; i < cartSize; ++i) {
         Product* product = binarySearchProduct(products, 0, productCount - 1, cart[i].product_id, "product_id");
+        // Check if product is inactive
         if (!product || product->status == "Inactive") {
             cout << "------------------------------------------------------------------" << endl;
             cout << "| WARNING: Product '" << cart[i].product_name << "' is no longer available!" << endl;
@@ -2915,6 +3053,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
             totalPayment += cart[i].total;
         }
     }
+
     if (!canProceed) {
         cout << "==================================================================" << endl;
         cout << "| CANNOT PROCEED TO PAYMENT DUE TO ISSUES WITH ABOVE ITEMS!      |" << endl;
@@ -2927,6 +3066,8 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         displayCart(loggedInMember);
         return;
     }
+
+    // generate new order ID and get current datetime
     string orderId = generateOrderId();
     time_t now = time(0);
     tm *ltm = localtime(&now);
@@ -2936,19 +3077,25 @@ void proceedToPayment(CartItem* cart, int cartSize) {
                      to_string(ltm->tm_hour) + ":" +
                      to_string(ltm->tm_min) + ":" +
                      to_string(ltm->tm_sec);
+                     
     Order* order = nullptr;
     string paymentMethod;
     char choicePayment;
+    // prompt user to choose payment method
     cout << "\nChoose your payment method" << endl;
     cout << "1. Cash" << endl;
     cout << "2. Credit card" << endl;
     cout << "3. Debit card" << endl;
     cout << "\nYour choice [0 to cancel payment]: ";
     cin >> choicePayment;
+    
+    // validate the choice
     while(choicePayment != '0' && choicePayment != '1' && choicePayment != '2' && choicePayment != '3') {
         cout << "Invalid choice. Please enter again: ";
         cin >> choicePayment;	
     }
+
+    // create the appropriate Order object based on payment method
     if(choicePayment == '1') {
         order = new CashOrder(orderId, loggedInMember.member_id, datetime, totalPayment, cart, cartSize);
         paymentMethod = "Cash";
@@ -2961,16 +3108,24 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         order = new DebitCreditCardOrder(orderId, loggedInMember.member_id, datetime, totalPayment, cart, cartSize);
         paymentMethod = "Debit Card";
     }
+    // process payment and display the receipt 
     order->displayReceipt();
     order->processPayment();
+    // save to file
     recordPurchase(order, paymentMethod); 
+
     delete order;
     delete[] cart;
+
+    // empty user's cart
     clearCartFile(loggedInMember.member_id);
     cout << "\nYour cart has been cleared.\n";
+
+    // ask if user wants to continue shopping
     cout << "\nDo you want to make more purchase[Y/N]?: ";
     char morePurchase;
     cin >> morePurchase;
+
     if (morePurchase == 'Y' || morePurchase == 'y') {
         cin.ignore();
         clearScreen();
@@ -2985,6 +3140,7 @@ void proceedToPayment(CartItem* cart, int cartSize) {
     }
 }
 
+// display purchase history for the logged-in member
 void viewPurchaseHistory() {
     if (loggedInMember.member_id.empty()) {
         cout << "Error: No user logged in." << endl;
@@ -3003,7 +3159,8 @@ void viewPurchaseHistory() {
     }
 
     const int MAX_ORDERS = 100;
-    Order* orders[MAX_ORDERS]; // An array of pointers to Order objects
+    // an array of pointers to Order objects
+    Order* orders[MAX_ORDERS]; 
     int orderCount = 0;
     string line;
 
@@ -3016,7 +3173,8 @@ void viewPurchaseHistory() {
             if (line[i] == ',') commaCount++;
         }
 
-        if (commaCount == 4) { // This is an order header line
+        // this is an order header line
+        if (commaCount == 4) { 
             stringstream ss(line);
             string orderId, memberId, datetime, paymentMethod, totalAmountStr;
             double totalAmount;
@@ -3037,9 +3195,9 @@ void viewPurchaseHistory() {
 			    totalAmount = 0.0;
 			}
 
-            // Only process records for the currently logged-in member
+            // only process records for the currently logged-in member
             if (memberId == loggedInMember.member_id) {
-                // Create a temporary array to hold items for this specific order
+                // create a temporary array to hold items for this specific order
                 const int MAX_ITEMS_PER_ORDER = 20;
                 CartItem tempItems[MAX_ITEMS_PER_ORDER];
                 int itemCount = 0;
@@ -3070,7 +3228,7 @@ void viewPurchaseHistory() {
                 }
 
                 // create a new Order object (for CashOrder)
-                // to hold the data we just read. this allocates the necessary memory.
+                // to hold the data we just read and allocates the necessary memory.
                 orders[orderCount] = new CashOrder(orderId, memberId, datetime, totalAmount, tempItems, itemCount);
                 orders[orderCount]->paymentMethod = paymentMethod;
                 orderCount++;
@@ -3162,26 +3320,36 @@ void viewPurchaseHistory() {
     clearScreen();
     memberMenu(loggedInMember);
 }
+
+// get the current date and time in format "YYYY-MM-DD HH:MM:SS"
 string getCurrentDateTime() {
+    // get current time
     time_t now = time(nullptr);
+    // convert to local time
     tm* localTime = localtime(&now);
 
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
     return string(buffer);
 }
+
+// function that user can submit the rating and feedback
 void submitRatingFeedback(const string& member_id) {
     clearScreen();
     cout << "\n===============================================================\n";
     cout << "                         RATE OUR SYSTEM                       \n";
     cout << "===============================================================\n";
+    
     int rating;
     string feedback_text;
+    // ask user for rating between 1-5
     while (true) {
         cout << "Enter your rating (1-5, 5 being excellent): ";
         string ratingInput;
+        // read input as string
         getline(cin, ratingInput);
         try {
+            // convert string to integer
             rating = stoi(ratingInput);
             if (rating >= 1 && rating <= 5) {
                 break;
@@ -3194,11 +3362,21 @@ void submitRatingFeedback(const string& member_id) {
             cout << "Input out of range. Please enter a number between 1 and 5.\n";
         }
     }
+
+    // ask user to write feedback
     cout << "Enter your feedback: ";
     getline(cin, feedback_text);
+
+    // get current date and time
     string currentDateTime = getCurrentDateTime();
+
+    // create a new feedback object with the user's input
     RatingFeedback newFeedback(member_id, rating, feedback_text, currentDateTime);
+    
+    // save feedback to file
     saveFeedbackToFile(newFeedback); 
+
+    // add feedback to the list
     feedbackList.append(newFeedback);
 
     cout << "\nThank you for your feedback!\n";
@@ -3206,6 +3384,7 @@ void submitRatingFeedback(const string& member_id) {
     cin.get();
     memberMenu(loggedInMember);
 }
+
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
     Node<Member>* current = memberList.getHead();
