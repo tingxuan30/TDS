@@ -229,6 +229,16 @@ public:
         }
         return false;
     }
+    Product* getById(const string& id) {
+	    Node<Product>* current = head;
+	    while (current != nullptr) {
+	        if (current->data.product_id == id) {
+	            return &(current->data);
+	        }
+	        current = current->next;
+	    }
+	    return nullptr;
+	}
     Product* findProductByCategory(const string& category) {
         Node<Product>* current = head;
         while (current != nullptr) {
@@ -3251,6 +3261,223 @@ void addProduct(){
     cin.ignore();
     manageProduct();
 }
+void editProduct(const string& currentCategory) {
+    string selection, new_name, price_input, status_input, new_status, new_description;
+    string new_category = currentCategory;
+    double new_price;
+    string categories[] = {"Pizza", "Side", "Beverage"};
+    string input;
+    int choice;
+
+    cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
+    getline(cin, selection);
+
+	if (selection == "C" || selection == "c") {
+        cout << "\nOperation cancelled.\n";
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    }
+    string product_id = selection;
+    Product* productToEdit = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
+
+    if (!productToEdit) {
+        cout << "Product with ID '" << product_id << "' not found." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    } else if (productToEdit->category != currentCategory) {
+        cout << "Product with ID '" << product_id << "' not found in '" 
+             << currentCategory << "' category." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    }
+
+    cout << "\nEditing product: " << productToEdit->product_name << endl;
+	cout << "[Press ENTER to keep current data]"<< endl;
+	Products productList;
+    ifstream inFile(PRODUCT_FILE);
+    if (inFile) {
+        string line;
+        while (getline(inFile, line)) {
+            if (line.empty()) continue;
+            
+            string parts[6];
+            int fieldsFound = splitAttribute(line, parts, 6);
+            if (fieldsFound < 6) continue;
+            
+            for (int i = 0; i < 6; i++) {
+                parts[i] = removeQuotes(parts[i]);
+            }
+            
+            Product tempProduct;
+            tempProduct.product_id = parts[0];
+            tempProduct.product_name = parts[1];
+            tempProduct.category = parts[2];
+            try { tempProduct.price = stod(parts[3]); } catch (...) { tempProduct.price = 0; }
+            tempProduct.description = parts[4];
+            tempProduct.status = parts[5];
+            
+            productList.append(tempProduct);
+        }
+        inFile.close();
+    }
+    while (true) {
+        cout << "\nEnter new name: ";
+        getline(cin, new_name);
+        if (new_name.empty()) {
+            new_name = productToEdit->product_name;
+            break;
+        }
+
+        bool valid = true;
+        int letterCount = 0;
+        for (int i = 0; i < new_name.length(); ++i) {
+            char c = new_name[i];
+            if (!isalpha(c) && c != ' ') {
+                valid = false;
+                break;
+            }
+            if (isalpha(c)) letterCount++;
+        }
+
+        if (!valid || letterCount < 3 || letterCount > 100) {
+            cout << "Invalid name! Please enter a valid name.\n";
+            continue;
+        }
+
+        if (!productList.productNameExists(new_name) || new_name == productToEdit->product_name) {
+            break;
+        } else {
+            cout << "This product name already exists. Please use a different name.\n";
+        }
+    }
+
+    while (true) {
+        cout << "\nSelect category :\n";
+        for (int i = 0; i < 3; ++i) {
+            cout << i + 1 << ". " << categories[i] << "\n";
+        }
+        cout << "\nEnter new category (1-3): ";
+        getline(cin, input);
+
+        if (input.empty()) {
+            new_category = productToEdit->category;
+            break;
+        }
+
+        try {
+            choice = stoi(input);
+            if (choice >= 1 && choice <= 3) {
+                new_category = categories[choice - 1];
+                break;
+            } else {
+                cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+            }
+        } catch (const invalid_argument& e) {
+            cout << "Invalid input. Please enter a number.\n";
+        }
+    }
+
+    while (true) {
+        cout << "\nEnter new price: ";
+        getline(cin, price_input);
+        if (price_input.empty()) {
+            new_price = productToEdit->price;
+            break;
+        }
+        try {
+            new_price = stod(price_input);
+            if (new_price <= 0) throw invalid_argument("Price must be positive.");
+            break;
+        } catch (const invalid_argument& e) {
+            cout << "Invalid price! Please enter a valid positive number.\n";
+        }
+    }
+	while (true) {
+        cout << "\nEnter new description: ";
+        getline(cin, new_description);
+        if (new_description.empty()) {
+            new_description = productToEdit->description;
+            break;
+        }
+        else
+        	break;
+    }
+    while (true) {
+        cout << "\nSelect status:\n";
+        cout<<"1. Active"<< endl;
+        cout<<"2. Inactive"<<endl;
+        cout << "Enter new status (1 or 2): ";
+        getline(cin, input);
+
+        if (input.empty()) {
+            new_status = productToEdit->status;
+            break;
+        }
+
+        try {
+            choice = stoi(input);
+            if (choice == 1) {
+                new_status = "Active";
+                break;
+            }
+            else if (choice == 2) {
+                new_status = "Inactive";
+                break;
+            } 
+			else {
+                cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+            }
+        } catch (const invalid_argument& e) {
+            cout << "Invalid input. Please enter a number.\n";
+        }
+    }
+
+    Product editProduct(product_id, new_name, new_category, new_price, new_description, new_status);
+    Node<Product>* current = productList.getHead();
+    while (current != nullptr) {
+        if (current->data.product_id == product_id) {
+            current->data.product_name = new_name;
+            current->data.category = new_category;
+            current->data.price = new_price;
+            current->data.description = new_description;
+            current->data.status = new_status;
+            break;
+        }
+        current = current->next;
+    }
+
+    ofstream outFile(PRODUCT_FILE);
+    if (outFile) {
+        current = productList.getHead();
+        bool firstLine = true;
+        while (current != nullptr) {
+            if (!firstLine) outFile << "\n";
+            
+            outFile << current->data.product_id << ","
+                   << "\"" << current->data.product_name << "\","
+                   << "\"" << current->data.category << "\","
+                   << fixed << setprecision(2) << current->data.price << ","
+                   << "\"" << current->data.description << "\","
+                   << "\"" << current->data.status << "\"";
+            
+            current = current->next;
+            firstLine = false;
+        }
+        outFile.close();
+        cout << "\nProduct updated successfully!\n";
+    } else {
+        cout << "\nError saving changes to file!\n";
+    }
+
+    cout << "Press [ENTER] to continue.";
+    cin.ignore();
+    manageProduct();
+}
+
+
 void displayProductAdmin(const Product& product) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
@@ -3311,7 +3538,7 @@ void manageProduct() {
             loadProducts();
             bool found = false;
             for (int i = 0; i < productCount; i++) {
-                if (products[i].category == selectedCategory && products[i].status == "Active") {
+                if (products[i].category == selectedCategory) {
                     displayProductAdmin(products[i]);
                     found = true;
                 }
@@ -3335,15 +3562,12 @@ void manageProduct() {
 	            return;
 	        }
 	        else if(selection == "2") {
-	            clearScreen();
-	            //editProduct();
+	            editProduct(selectedCategory);
 	            return;
 	        }
-	        else if(selection == "3") {
-	            clearScreen();
-	            //changeProductStatus();
-	            return;
-	        }
+	        else if (selection == "3") {
+				//changeProductStatus()
+            }
 	        else if(selection == "4") {
 	            clearScreen();
 	            manageProduct();
