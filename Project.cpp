@@ -3817,6 +3817,68 @@ void editProduct(const string& currentCategory) {
     cin.ignore();
     manageProduct();
 }
+
+void changeProductStatus(const string& currentCategory){
+	string selection, choice, status_input, new_status;
+	cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
+    getline(cin, selection);
+
+	if (selection == "C" || selection == "c") {
+        cout << "\nOperation cancelled.\n";
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    }
+    string product_id = selection;
+    Product* productToEdit = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
+
+    if (!productToEdit) {
+        cout << "Product with ID '" << product_id << "' not found." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    } else if (productToEdit->category != currentCategory) {
+        cout << "Product with ID '" << product_id << "' not found in '" 
+             << currentCategory << "' category." << endl;
+        cout << "Press [ENTER] to continue.";
+        cin.ignore();
+        manageProduct();
+    }
+    cout << "\nEditing product: " << productToEdit->product_name << endl;
+    cout << "Current Status : " << productToEdit->status << endl;
+	cout << "\nDo you want to change product status?[Y/N]: ";
+	getline(cin, choice);
+
+	Products productList;
+    if (!loadProductsIntoList(productList)) {
+        cout << "Error loading products!\n";
+        return;
+    }
+    if(choice == "Y"|| choice == "y"){
+		if(productToEdit->status == "Active")
+			new_status = "Inactive";
+		else
+			new_status = "Active";
+		// Update product
+	    Node<Product>* current = productList.getHead();
+	    while (current != nullptr) {
+	        if (current->data.product_id == product_id) {
+	            current->data.status = new_status;
+	            break;
+	        }
+	        current = current->next;
+	    }
+	    cout << "\nProduct status updated successfully!\n";
+	    loadProducts();
+	}
+    
+	if (!saveProductList(productList)) 
+        cout << "Error saving products!\n";
+
+    cout << "Press [ENTER] to continue.";
+    cin.ignore();
+    manageProduct();
+}
 void displayProductAdmin(const Product& product) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
@@ -3905,7 +3967,8 @@ void manageProduct() {
 	            return;
 	        }
 	        else if (selection == "3") {
-				//changeProductStatus()
+				changeProductStatus(selectedCategory);
+				return;
             }
 	        else if(selection == "4") {
 	            clearScreen();
