@@ -2563,7 +2563,7 @@ void displayCart(Member loggedInMember) {
     cout << "|                                    |" << endl;
     cout << "|    Options:                        |" << endl;
     cout << "|  1. Delete an item from cart       |" << endl;
-    cout << "|  2. Edit quantity of an item       |" << endl;
+    cout << "|  2. Edit cart item                 |" << endl;
     cout << "|  3. Proceed to payment             |" << endl;
     cout << "|  4. Back to product list           |" << endl;
     cout << "|  5. Back to member menu            |" << endl;
@@ -4885,7 +4885,7 @@ void adminMenu(Admin loggedInAdmin) {
         cout << "===============================================================\n";
         cout << "1. View Product Inventory\n";
         if (loggedInAdmin.position == "superadmin"){
-        	cout << "2. View/Edit Admin List\n";
+        	cout << "2. View Admin List\n";
 		}
 		else{
 			cout << "2. View Admin List\n";
@@ -4894,8 +4894,7 @@ void adminMenu(Admin loggedInAdmin) {
         cout << "4. View Order Record\n";
         cout << "5. View Rating Record\n";
         cout << "6. View Sales Report\n";
-        cout << "7. View My Admin Profile\n";
-        cout << "8. Log Out\n";
+        cout << "7. Log Out\n";
         cout << "===============================================================\n";
             
         //get choice from admin
@@ -4935,11 +4934,6 @@ void adminMenu(Admin loggedInAdmin) {
             return;
         }
         else if(choice == "7") {
-            clearScreen();
-            //adminProfile();
-            return;
-        }
-        else if(choice == "8") {
             clearScreen();
             mainMenu();
             return;
