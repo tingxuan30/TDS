@@ -1208,6 +1208,14 @@ void signup() {
         cout << "\nEnter your email (example: user@example.com): ";
         getline(cin, email);
 
+        // check if email is empty
+        if (email.empty()) {
+            cout << "____________________________________________________\n";
+            cout << "|Email cannot be empty! Please enter your email.   |\n";
+            cout << "|__________________________________________________|\n";
+            continue;
+        }
+
         //keep track for the position of @ and .
         int atPosition = -1;
         int dotPosition = -1;
