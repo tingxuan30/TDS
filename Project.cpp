@@ -221,17 +221,6 @@ class LinkedList {
 
 class Products : public LinkedList<Product> {
 public:
-	Product pro;
-    bool nameExists(const string& name) const {
-        Node<Product>* current = head;
-        while (current != nullptr) {
-            if (current->data.product_name == pro.product_name) {
-                return true;
-            }
-            current = current->next;
-        }
-        return false;
-    }
     Product* getById(const string& id) {
 	    Node<Product>* current = head;
 	    while (current != nullptr) {
@@ -262,7 +251,32 @@ public:
 	    }
 	    return false;
 	}
-    friend bool loadProducts();
+	void saveProduct(const Product& product) {
+	    bool fileIsEmpty = true;
+	    {
+	        ifstream inFile(PRODUCT_FILE);
+	        if (inFile) {
+	            string line;
+	            if (getline(inFile, line)) {
+	                fileIsEmpty = false;
+	            }
+	            inFile.close();
+	        }
+	    }
+	    ofstream outFile(PRODUCT_FILE, ios::app);
+	    if (outFile) {
+	        if (!fileIsEmpty) {
+	            outFile << "\n";
+	        }
+	        outFile << product.product_id << ","
+	                << "\"" << product.product_name << "\","
+	                << "\"" << product.category << "\","
+	                << fixed << setprecision(2) << product.price << ","
+	                << "\"" << product.description << "\","
+	                << "\"" << product.status << "\"";
+	        outFile.close();
+	    }
+	}
 };
 
 // Derived class for member linked list
@@ -3463,137 +3477,6 @@ void viewMemberList(const string& statusFilter) {
         }
     }
 }
-void saveProduct(const Product& product) {
-    bool fileIsEmpty = true;
-    {
-        ifstream inFile(PRODUCT_FILE);
-        if (inFile) {
-            string line;
-            if (getline(inFile, line)) {
-                fileIsEmpty = false;
-            }
-            inFile.close();
-        }
-    }
-    ofstream outFile(PRODUCT_FILE, ios::app);
-    if (outFile) {
-        if (!fileIsEmpty) {
-            outFile << "\n";
-        }
-        outFile << product.product_id << ","
-                << "\"" << product.product_name << "\","
-                << "\"" << product.category << "\","
-                << fixed << setprecision(2) << product.price << ","
-                << "\"" << product.description << "\","
-                << "\"" << product.status << "\"";
-        outFile.close();
-    }
-}
-string getNextProductId() {
-    int lastId = 0;
-    ifstream file(PRODUCT_ID_FILE);
-    if (file) {
-        file >> lastId;
-        file.close();
-    }
-    lastId++;
-    ofstream outFile(PRODUCT_ID_FILE);
-    if (outFile) {
-        outFile << lastId; 
-        outFile.close();
-    }
-    return to_string(lastId);
-}
-void addProduct(){
-	Products products;
-	string product_id = getNextProductId();
-    string status = "Active";
-    string product_name, category, price, stock, description;
-    string categories[] = {"Pizza", "Side", "Beverage"};
-    int choice;
-    clearScreen();
-    while (true) {
-        cout << "\nEnter product name (or 'C' to cancel): ";
-        getline(cin, product_name);
-        if (product_name == "C" || product_name == "c") {
-            cout << "\nOperation cancelled.\n";
-            cout << "Press [ENTER] to continue.";
-            cin.ignore();
-            manageProduct();
-        }
-        bool valid = true;
-        int letterCount = 0;
-        for (int i = 0; i < product_name.length(); ++i) {
-            char c = product_name[i];
-            if (!isalpha(c) && c != ' ') {
-                valid = false;
-                break;
-            }
-            if (isalpha(c)) 
-                letterCount++;
-        }
-        if (product_name.empty()) {
-            cout << "Name cannot be empty.\n";
-            continue;
-        }
-        if (!valid || letterCount < 3 || letterCount > 100) {
-            cout << "Invalid name! Please enter a valid name.\n";
-            continue;
-        }
-        if (!products.productNameExists(product_name)){
-        	cout << "This product name already exist, please use the different name.\n";
-        	continue;
-		}
-        break;
-    }
-    while(true){
-    	cout << "\nSelect category\n";
-    	for (int i = 0; i < 3; ++i) {
-            cout << i + 1 << ". " << categories[i] << "\n";
-        }
-        cout << "Enter choice (1-3):";
-        string input;
-	    getline(cin, input);
-	    try {
-	        choice = stoi(input);
-	        if (choice >= 1 && choice <= 3) {
-	            category = categories[choice - 1];
-	            break;
-	        } else {
-	            cout << "Invalid choice. Please enter 1, 2, or 3.\n";
-	        }
-	    } catch (const invalid_argument& e) {
-	        cout << "Invalid input. Please enter a number.\n";
-	    }
-	}
-	while (true) {
-        cout << "\nEnter price: ";
-        getline(cin, price);
-        try {
-            if (stof(price) <= 0) throw invalid_argument("Price must be positive.");
-            break;
-        } catch (const invalid_argument& e) {
-            cout << "Invalid price! Please enter a valid positive number.\n";
-        }
-    }
-    while (true){
-    	cout << "\nEnter product description: ";
-    	getline(cin, description);
-    	if (description.empty()) {
-	        cout << "Description cannot be empty. Please try again.\n";
-	    } else {
-	        break;
-	    }
-	}
-	Product newProduct(product_id, product_name, category, stod(price), description, status);
-	
-	products.append(newProduct);
-	saveProduct(newProduct); 
-	cout << product_name << " added successfully!\n";
-    cout << "Press [ENTER] to continue.";
-    cin.ignore();
-    manageProduct();
-}
 bool loadProductsIntoList(Products& productList) {
     ifstream inFile(PRODUCT_FILE);
     if (!inFile) return false;
@@ -3643,6 +3526,115 @@ bool saveProductList(const Products& productList) {
     }
     outFile.close();
     return true;
+}
+string getNextProductId() {
+    int lastId = 0;
+    ifstream file(PRODUCT_ID_FILE);
+    if (file) {
+        file >> lastId;
+        file.close();
+    }
+    lastId++;
+    ofstream outFile(PRODUCT_ID_FILE);
+    if (outFile) {
+        outFile << lastId; 
+        outFile.close();
+    }
+    return to_string(lastId);
+}
+void addProduct(){
+	Products products;
+    if (!loadProductsIntoList(products)) {
+	    cout << "Error loading products!\n";
+	    return;
+	}
+
+    string status = "Active";
+    string product_name, category, price, stock, description;
+    string categories[] = {"Pizza", "Side", "Beverage"};
+    int choice;
+    clearScreen();
+    while (true) {
+        cout << "\nEnter product name (or 'C' to cancel): ";
+        getline(cin, product_name);
+        if (product_name == "C" || product_name == "c") {
+            cout << "\nOperation cancelled.\n";
+            cout << "Press [ENTER] to continue.";
+            cin.ignore();
+            manageProduct();
+        }
+        bool valid = true;
+		int charCount = 0;
+		for (int i = 0; i < product_name.length(); ++i) {
+		    char c = product_name[i];
+		    if (!isalnum(c) && c != ' ') {
+		        valid = false;
+		        break;
+		    }
+		    if (isalnum(c)) 
+		        charCount++;
+		}
+		if (product_name.empty()) {
+		    cout << "Name cannot be empty.\n";
+		    continue;
+		}
+		if (!valid || charCount < 3 || charCount > 100) {
+		    cout << "Invalid name! Please enter a valid name.\n";
+		    continue;
+		}
+        if (products.productNameExists(product_name)){
+        	cout << "This product name already exist, please use the different name.\n";
+        	continue;
+		}
+        break;
+    }
+    while(true){
+    	cout << "\nSelect category\n";
+    	for (int i = 0; i < 3; ++i) {
+            cout << i + 1 << ". " << categories[i] << "\n";
+        }
+        cout << "Enter choice (1-3):";
+        string input;
+	    getline(cin, input);
+	    try {
+	        choice = stoi(input);
+	        if (choice >= 1 && choice <= 3) {
+	            category = categories[choice - 1];
+	            break;
+	        } else {
+	            cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+	        }
+	    } catch (const invalid_argument& e) {
+	        cout << "Invalid input. Please enter a number.\n";
+	    }
+	}
+	while (true) {
+        cout << "\nEnter price: ";
+        getline(cin, price);
+        try {
+            if (stof(price) <= 0) throw invalid_argument("Price must be positive.");
+            break;
+        } catch (const invalid_argument& e) {
+            cout << "Invalid price! Please enter a valid positive number.\n";
+        }
+    }
+    while (true){
+    	cout << "\nEnter product description: ";
+    	getline(cin, description);
+    	if (description.empty()) {
+	        cout << "Description cannot be empty. Please try again.\n";
+	    } else {
+	        break;
+	    }
+	}
+	string product_id = getNextProductId();
+	Product newProduct(product_id, product_name, category, stod(price), description, status);
+
+	products.saveProduct(newProduct); 
+	cout << product_name << " added successfully!\n";
+    cout << "Press [ENTER] to continue.";
+    cin.ignore();
+    manageProduct();
 }
 void editProduct(const string& currentCategory) {
     string selection, new_name,category_input, new_category, price_input, status_input, new_status, new_description;
