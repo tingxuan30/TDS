@@ -3683,21 +3683,24 @@ void editProduct(const string& currentCategory) {
         }
 
         bool valid = true;
-        int letterCount = 0;
-        for (int i = 0; i < new_name.length(); ++i) {
-            char c = new_name[i];
-            if (!isalpha(c) && c != ' ') {
-                valid = false;
-                break;
-            }
-            if (isalpha(c)) letterCount++;
-        }
-
-        if (!valid || letterCount < 3 || letterCount > 100) {
-            cout << "Invalid name! Please enter a valid name.\n";
-            continue;
-        }
-
+		int charCount = 0;
+		for (int i = 0; i < new_name.length(); ++i) {
+		    char c = new_name[i];
+		    if (!isalnum(c) && c != ' ') {
+		        valid = false;
+		        break;
+		    }
+		    if (isalnum(c)) 
+		        charCount++;
+		}
+		if (new_name.empty()) {
+		    cout << "Name cannot be empty.\n";
+		    continue;
+		}
+		if (!valid || charCount < 3 || charCount > 100) {
+		    cout << "Invalid name! Please enter a valid name.\n";
+		    continue;
+		}
         if (!productList.productNameExists(new_name) || new_name == productToEdit->product_name) {
             break;
         } else {
