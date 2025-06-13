@@ -273,6 +273,8 @@ public:
 	        outFile.close();
 	    }
 	}
+	
+	friend bool loadProducts();
 };
 
 // Derived class for member linked list
@@ -3544,7 +3546,7 @@ bool loadProductsIntoList(Products& productList) {
         tempProduct.product_id = parts[0];
         tempProduct.product_name = parts[1];
         tempProduct.category = parts[2];
-        try { tempProduct.price = stod(parts[3]); } catch (...) { tempProduct.price = 0; }
+        try { tempProduct.price = stod(parts[3]); } catch (const invalid_argument& e) { tempProduct.price = 0; }
         tempProduct.description = parts[4];
         tempProduct.status = parts[5];
         
@@ -5092,6 +5094,17 @@ private:
     }
 
 public:
+	
+	void getSalesStats(double& totalRevenue, int& totalOrders) {
+        Order* orders[MAX_ORDERS];
+        totalOrders = loadOrders(orders);
+        totalRevenue = 0.0;
+        for(int i = 0; i < totalOrders; i++) {
+            totalRevenue += orders[i]->totalAmount;
+        }
+        freeOrders(orders, totalOrders);
+    }
+    
     void generateReport() {
 	    while (true) {
 	        clearScreen();
@@ -5202,7 +5215,7 @@ public:
 			    clearScreen();
 			
 			    cout << "\n+--------------------------------------------------------------------------------------------------------+\n";
-			    cout << "|                                         SALES LIST : ORDER DETAILS                                    |\n";
+			    cout << "|                                         SALES LIST : ORDER DETAILS                                     |\n";
 			    cout << "+--------------------------------------------------------------------------------------------------------+\n";
 			    cout << "| " << setw(5) << "No." 
 			         << " | " << setw(64) << "Item" 
@@ -5235,8 +5248,182 @@ public:
 	        freeOrders(orders, orderCount);
 	    }
 	}
+	
+	friend void viewDashboard();
 
 };
+
+struct MonthlySales {
+    string monthYear;
+    double amount;
+};
+
+struct SimpleOrder {
+    string info;
+    double amount;
+};
+
+void viewDashboard() {
+    clearScreen();
+
+    // Get current year
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    int currentYear = 1900 + ltm->tm_year;
+    const int MONTHS_IN_YEAR = 12;
+    
+    // Total Orders and Sales
+    SalesReportGenerator report;
+    double totalSales = 0.0;
+    int totalOrders = 0;
+    report.getSalesStats(totalSales, totalOrders); 
+
+    // Product Statistics
+    if (!loadProducts()) {
+        cout << "Error loading products!\n";
+        return;
+    }
+    int totalProducts = productCount;
+    int activeProducts = 0, inactiveProducts = 0;
+    for (int i = 0; i < productCount; i++) {
+        if (products[i].status == "Active") activeProducts++;
+        else inactiveProducts++;
+    }
+
+    // Member Statistics
+    memberList.loadMembers();
+    int totalMembers = 0, activeMembers = 0, inactiveMembers = 0;
+    Node<Member>* memberCurrent = memberList.getHead();
+    while (memberCurrent != nullptr) {
+        totalMembers++;
+        if (memberCurrent->data.status == "Active") activeMembers++;
+        else inactiveMembers++;
+        memberCurrent = memberCurrent->next;
+    }
+
+    // Monthly Sales Initialization
+    MonthlySales monthlySales[MONTHS_IN_YEAR];
+    for (int i = 0; i < MONTHS_IN_YEAR; i++) {
+        string month = (i+1 < 10) ? "0" + to_string(i+1) : to_string(i+1);
+        monthlySales[i] = {month + "/" + to_string(currentYear), 0.0};
+    }
+
+    // Sales Data Reading
+    ifstream file(PURCHASE_HISTORY_FILE);
+    if (file) {
+        string line;
+        while (getline(file, line)) {
+            if (line.empty()) continue;
+
+            if (line.find("ORD") == 0) {
+                string parts[5];
+                stringstream ss(line);
+                for (int i = 0; i < 5 && getline(ss, parts[i], ','); i++);
+
+                try {
+                    string date = parts[2];
+                    size_t spacePos = date.find(' ');
+                    if (spacePos != string::npos)
+                        date = date.substr(0, spacePos);
+
+                    size_t firstSlash = date.find('/');
+                    size_t secondSlash = date.find('/', firstSlash + 1);
+                    string month = date.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+                    if (month.length() == 1) month = "0" + month;
+                    string year = date.substr(secondSlash + 1);
+                    string monthYear = month + "/" + year;
+
+                    double amount = stod(parts[3]);
+
+                    for (int i = 0; i < MONTHS_IN_YEAR; i++) {
+                        if (monthlySales[i].monthYear == monthYear) {
+                            monthlySales[i].amount += amount;
+                            break;
+                        }
+                    }
+                } catch (const invalid_argument& e) {
+                    continue;
+                }
+
+                while (getline(file, line) && !line.empty()) {}
+            }
+        }
+        file.close();
+    }
+
+    // Display Summary
+    cout << "=================================================================\n";
+    cout << "|                           DASHBOARD                           |\n";
+    cout << "=================================================================\n";
+    cout << "| SUMMARY STATISTICS:                                           |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    cout << "| Products: " << setw(4) << totalProducts << " total | " 
+         << setw(4) << activeProducts << " active | " 
+         << setw(4) << inactiveProducts << " inactive" 
+         << setw(14) << " |\n";
+    cout << "| Members:  " << setw(4) << totalMembers << " total | " 
+         << setw(4) << activeMembers << " active | " 
+         << setw(4) << inactiveMembers << " inactive" 
+         << setw(14) << " |\n";
+    cout << "| Orders:   " << setw(4) << totalOrders << " total | " 
+         << "Sales: RM " << setw(12) << fixed << setprecision(2) << totalSales 
+         << setw(19) << " |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    cout << "| MONTHLY SALES (" << currentYear << "):                                         |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    for (int i = 0; i < MONTHS_IN_YEAR; i++) {
+        cout << "| " << monthlySales[i].monthYear << ": RM " 
+             << setw(10) << fixed << setprecision(2) << monthlySales[i].amount 
+             << setw(42) << " |\n";
+    }
+
+    // Display Recent Orders (Last 3)
+    cout << "|---------------------------------------------------------------|\n";
+    cout << "| RECENT ORDERS (Last 3)                                        |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    SimpleOrder recentOrders[100];
+    int orderIdx = 0;
+    
+    file.open(PURCHASE_HISTORY_FILE);
+    if (file) {
+        string line;
+        while (getline(file, line)) {
+            if (line.empty()) continue;
+            if (line.find("ORD") == 0) {
+                string parts[5];
+                stringstream ss(line);
+                for (int i = 0; i < 5 && getline(ss, parts[i], ','); i++);
+
+                try {
+                    string orderId = parts[0];
+                    string date = parts[2];
+                    double amount = stod(parts[3]);
+                    if (orderIdx < 100) {
+                        recentOrders[orderIdx].info = orderId + " - " + date;
+                        recentOrders[orderIdx].amount = amount;
+                        orderIdx++;
+                    }
+                } catch (const invalid_argument& e) {
+                    continue;
+                }
+            }
+        }
+        file.close();
+    }
+
+    // Print last 3 orders
+    for (int i = orderIdx - 1; i >= 0 && orderIdx - i <= 3; i--) {
+        cout << "| " << setw(20) << left << recentOrders[i].info.substr(0, 25) << " | "
+             << "RM " << setw(10) << fixed << setprecision(2) << recentOrders[i].amount 
+             << setw(24) << " |\n";
+    }
+
+    cout << "================================================================\n";
+    cout << "\nPress [ENTER] to continue...";
+    cin.get();
+}
+
+
 
 //function to display adminMenu
 void adminMenu(Admin loggedInAdmin) {
@@ -5256,8 +5443,8 @@ void adminMenu(Admin loggedInAdmin) {
         cout << "3. View/Edit Member List\n";
         cout << "4. View Order Record\n";
         cout << "5. View Rating Record\n";
-        cout << "6. View Dashboard\n";
-        cout << "7. View Sales Report\n";
+        cout << "6. View Sales Report\n";
+        cout << "7. View Dashboard\n";
         cout << "8. Log Out\n";
         cout << "===============================================================\n";
             
@@ -5294,14 +5481,14 @@ void adminMenu(Admin loggedInAdmin) {
         }
         else if(choice == "6") {
             clearScreen();
-            //dashboard();
+            SalesReportGenerator reportGenerator;
+    		reportGenerator.generateReport(); 
             return;
         }
         else if(choice == "7") {
             clearScreen();
-            SalesReportGenerator reportGenerator;
-    		reportGenerator.generateReport(); 
-            return;
+			viewDashboard();
+            adminMenu(loggedInAdmin);
         }
         else if(choice == "8") {
             clearScreen();
