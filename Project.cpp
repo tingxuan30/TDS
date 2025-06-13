@@ -3380,12 +3380,18 @@ void submitRatingFeedback(const string& member_id) {
             if (rating >= 1 && rating <= 5) {
                 break;
             } else {
-                cout << "Invalid rating. Please enter a number between 1 and 5.\n";
+            	cout << "\n_____________________________________________________________\n";
+		        cout << "| Invalid rating. Please enter a number between 1 and 5.     |\n";
+	            cout << "|____________________________________________________________|\n\n";
             }
         } catch (const invalid_argument& e) {
-            cout << "Invalid input. Please enter a number.\n";
+        	cout << "\n___________________________________________________\n";
+			cout << "| Invalid input. Please enter a number.            |\n";
+	        cout << "|__________________________________________________|\n\n";
         } catch (const out_of_range& e) {
-            cout << "Input out of range. Please enter a number between 1 and 5.\n";
+        	cout << "\n_____________________________________________________________\n";
+		    cout << "| Input out of range. Please enter a number between 1 and 5. |\n";
+	        cout << "|____________________________________________________________|\n\n";
         }
     }
 
@@ -4894,7 +4900,7 @@ void adminMenu(Admin loggedInAdmin) {
 		else{
 			cout << "2. View Admin List\n";
 		}
-        cout << "3. View/Edit Member List\n";
+        cout << "3. View Member List\n";
         cout << "4. View Order Record\n";
         cout << "5. View Rating Record\n";
         cout << "6. View Sales Report\n";
