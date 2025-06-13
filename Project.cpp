@@ -3117,8 +3117,12 @@ void proceedToPayment(CartItem* cart, int cartSize) {
         cin >> choicePayment;	
     }
 
+    if(choicePayment == '0') {
+        cin.get();
+        displayCart(loggedInMember);
+    }
     // create the appropriate Order object based on payment method
-    if(choicePayment == '1') {
+    else if(choicePayment == '1') {
         order = new CashOrder(orderId, loggedInMember.member_id, datetime, totalPayment, cart, cartSize);
         paymentMethod = "Cash";
     }
