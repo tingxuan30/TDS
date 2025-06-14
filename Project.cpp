@@ -302,9 +302,6 @@ public:
 	        outFile.close();
 	    }
 	}
-	
-	// declare friend function to allow access to loadProducts function
-	friend bool loadProducts();
 };
 
 // Derived class for member linked list
@@ -5240,7 +5237,7 @@ private:
             }
 
 			// process order header line (contains 3 commas)
-            if (commaCount == 3) {
+            if (commaCount == 4) {
                 stringstream ss(line);
                 string orderId, memberId, datetime, paymentMethod, totalAmountStr;
                 double totalAmount;
@@ -5714,13 +5711,12 @@ void viewDashboard() {
                         date = date.substr(0, spacePos);
 
 					// parse month and year from date
-                    size_t firstSlash = date.find('/');
-                    size_t secondSlash = date.find('/', firstSlash + 1);
-                    string month = date.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+                    size_t firstHyphen = date.find('-');
+	                size_t secondHyphen = date.find('-', firstHyphen + 1);
+	                string month = date.substr(firstHyphen + 1, 2);
                     
                     // format month with leading zero if needed
-                    if (month.length() == 1) month = "0" + month;
-                    string year = date.substr(secondSlash + 1);
+                    string year = date.substr(0, 4);
                     string monthYear = month + "/" + year;
 
                     double amount = stod(parts[3]); // convert amount to double
