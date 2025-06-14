@@ -159,10 +159,23 @@ struct RatingFeedback {
     }
 };
 
+// Structure to store sales report data 
 struct ProductStats {
     string name;
     int count;
     double revenue;
+};
+
+// Structure to store dashboard monthly sales data 
+struct MonthlySales {
+    string monthYear;
+    double amount;
+};
+
+// Structure to store dashboard order records data 
+struct OrderRecords {
+    string info;
+    double amount;
 };
 
 // LinkedList base class that can store any data type "T"
@@ -224,7 +237,7 @@ class LinkedList {
         }
 };
 
-
+// Derived class for product linked list
 class Products : public LinkedList<Product> {
 public:
     Product* getById(const string& id) {
@@ -237,6 +250,8 @@ public:
 	    }
 	    return nullptr;
 	}
+	
+	//function to check if the product name already exist in while add and edit the products
     bool productNameExists(const string& product_name) const {
 	    Node<Product>* current = head;
 	    while (current != nullptr) {
@@ -247,6 +262,8 @@ public:
 	    }
 	    return false;
 	}
+	
+	// save product to file
 	void saveProduct(const Product& product) {
 	    bool fileIsEmpty = true;
 	    {
@@ -274,6 +291,7 @@ public:
 	    }
 	}
 	
+	// declare friend function to allow access to loadProducts function
 	friend bool loadProducts();
 };
 
@@ -5173,8 +5191,7 @@ public:
 	                cout << "No orders found in the purchase history.\n";
 	            }
 	            
-	            cout << "\n"; 
-	            cout << "Press [ENTER] to continue.";
+	            cout << "\nPress [ENTER] to continue.";
 	            cin.get();
 	        }
 	        else if (choice == "2") {
@@ -5207,8 +5224,7 @@ public:
 				}
 	            
 	            displaySalesSummary(orders, orderCount, sortBy);
-	            cout << "\n"; 
-	            cout << "Press [ENTER] to continue.";
+	            cout << "\nPress [ENTER] to continue.";
 	            cin.get();
 	        }
 	        else if (choice == "3") {
@@ -5251,16 +5267,6 @@ public:
 	
 	friend void viewDashboard();
 
-};
-
-struct MonthlySales {
-    string monthYear;
-    double amount;
-};
-
-struct SimpleOrder {
-    string info;
-    double amount;
 };
 
 void viewDashboard() {
@@ -5351,7 +5357,7 @@ void viewDashboard() {
         file.close();
     }
 
-    // Display Summary
+    // Display Dashboard
     cout << "=================================================================\n";
     cout << "|                           DASHBOARD                           |\n";
     cout << "=================================================================\n";
@@ -5366,8 +5372,8 @@ void viewDashboard() {
          << setw(4) << inactiveMembers << " inactive" 
          << setw(14) << " |\n";
     cout << "| Orders:   " << setw(4) << totalOrders << " total | " 
-         << "Sales: RM " << setw(12) << fixed << setprecision(2) << totalSales 
-         << setw(19) << " |\n";
+         << "Sales: RM " << setw(6) << fixed << setprecision(2) << totalSales 
+         << setw(25) << " |\n";
     cout << "|---------------------------------------------------------------|\n";
     cout << "| MONTHLY SALES (" << currentYear << "):                                         |\n";
     cout << "|---------------------------------------------------------------|\n";
@@ -5381,7 +5387,7 @@ void viewDashboard() {
     cout << "|---------------------------------------------------------------|\n";
     cout << "| RECENT ORDERS (Last 3)                                        |\n";
     cout << "|---------------------------------------------------------------|\n";
-    SimpleOrder recentOrders[100];
+    OrderRecords recentOrders[100];
     int orderIdx = 0;
     
     file.open(PURCHASE_HISTORY_FILE);
@@ -5413,12 +5419,12 @@ void viewDashboard() {
 
     // Print last 3 orders
     for (int i = orderIdx - 1; i >= 0 && orderIdx - i <= 3; i--) {
-        cout << "| " << setw(20) << left << recentOrders[i].info.substr(0, 25) << " | "
-             << "RM " << setw(10) << fixed << setprecision(2) << recentOrders[i].amount 
-             << setw(24) << " |\n";
+        cout << "| " << setw(25) << left << recentOrders[i].info.substr(0, 25) << " | "
+             << "RM " << setw(30) << fixed << setprecision(2) << recentOrders[i].amount 
+             << setw(3) << " |\n";
     }
 
-    cout << "================================================================\n";
+    cout << "=================================================================\n";
     cout << "\nPress [ENTER] to continue...";
     cin.get();
 }
