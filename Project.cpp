@@ -230,7 +230,12 @@ class LinkedList {
                 delete temp;
             }
         }
-        
+
+        // Virtual: checks if item exists by keyword. Always returns false by default.
+        virtual bool itemExists(const string& keyword) const {
+	        return false;
+	    }
+    
         //virtual Destructor to call clear() and clean up the list.
         virtual ~LinkedList() {
             clear();
@@ -412,33 +417,11 @@ public:
         file.close();
     }
 
-    //function to check if the email already exist while adding new admin
-    bool emailExists(const string& email) const {
-        //set the current to the head of linked list
+    // Override: checks if email or contact matches the keyword.
+    bool itemExists(const string& keyword) const override {
         Node<Admin>* current = head;
-        
-        //while the current is not null
         while (current != nullptr) {
-            //linear search
-            //return true when current email = registered email
-            if (current->data.email == email) {
-                return true;
-            }
-            current = current->next;
-        }
-        return false;
-    }
-
-    //function to check if the contact already exist while adding new admin
-    bool contactExists(const string& contact) const {
-        //set the current to the head of linked list
-        Node<Admin>* current = head;
-        
-        //while the current is not null
-        while (current != nullptr) {
-            //linear search
-            //return true when current contact = registered contact
-            if (current->data.contact == contact) {
+            if (current->data.email == keyword || current->data.contact == keyword) {
                 return true;
             }
             current = current->next;
@@ -4595,7 +4578,7 @@ void addNewAdmin() {
             cout << "Invalid email format! Please enter a valid email.\n";
             continue;
         }
-        if (adminList.emailExists(email)) {
+        if (adminList.itemExists(email)) {
             cout << "This email is already registered!\n";
             continue;
         }
@@ -4681,7 +4664,7 @@ void addNewAdmin() {
 	        cout << "Invalid contact number format.\n";
 	        continue;
 	    }
-	    if (adminList.contactExists(contact)) {
+	    if (adminList.itemExists(contact)) {
 	        cout << "This contact number is already registered!\n";
 	        continue;
 	    }
