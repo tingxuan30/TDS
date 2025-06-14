@@ -4502,7 +4502,9 @@ void addNewAdmin() {
     cout << "|                            ADD NEW ADMIN                                |\n";
     cout << "===========================================================================\n";
     cout << "| Requirement:                                                            |\n";
-    cout << "| -> Name cannot be same                                                  |\n";
+    cout << "| -> Name must have at least 5 characters                                 |\n";
+    cout << "| -> Name must not have special character(s)                              |\n";
+    cout << "| -> Name must not have number(s) allowed                                 |\n";
     cout << "| -> Password need at least 8 chars                                       |\n";
     cout << "| -> Password need one uppercase, lowercase, number                       |\n";
     cout << "| -> Contact format: 012-3456789 or 012-34567890                          |\n";
@@ -4927,7 +4929,7 @@ void viewOrderHistoryAdmin() {
 		    }
 		}
 		else if (choice == "N" || choice == "n"){
-			return;
+			adminMenu(loggedInAdmin);
 		}
         else{
         	cout << "\nInvalid input. Press [ENTER] to return to order history menu.";
