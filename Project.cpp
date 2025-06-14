@@ -654,6 +654,7 @@ class CashOrder : public Order {
 // Derived class for handle debit/credit card payment
 class DebitCreditCardOrder : public Order {
     private:
+    	string bank;
         string cardNumber;
         string expiryDate;
         string cvv;
@@ -664,7 +665,58 @@ class DebitCreditCardOrder : public Order {
 
         // override to handle card payment input and validation
         void processPayment() override {
-            cout << "Credit card number (13-16 digits): ";
+        	char choice;
+		    cin.ignore();
+		    
+		    cout << "\n_______________________________________________\n";
+		    cout << "| We only accept: Master Card & Visa Card      |\n";
+		    cout << "|______________________________________________|\n";
+		
+		    cout << "\nSelect your bank:\n";
+		    cout << "1. Maybank\n";
+		    cout << "2. CIMB\n";
+		    cout << "3. Public Bank\n";
+		    cout << "4. RHB Bank\n";
+		    cout << "5. OCBC Bank\n";
+		    cout << "6. Hong Leong Bank\n";
+		    cout << "7. Bank Islam\n";
+		    cout << "\nEnter choice (1-7): ";
+		    cin >> choice;
+	
+		    // Validate input
+		    while (choice < '1' || choice > '7') {
+		        cout << "Invalid choice. Please enter a number between 1 and 7: ";
+		        cin >> choice;
+		    }
+		    
+		    switch (choice) {
+		        case '1': 
+					bank = "Maybank"; 
+					break;
+		        case '2': 
+					bank = "CIMB"; 
+					break;
+		        case '3': 
+					bank = "Public Bank"; 
+					break;
+		        case '4': 
+					bank = "RHB Bank"; 
+					break;
+		        case '5': 
+					bank = "OCBC Bank"; 
+					break;
+		        case '6': 
+					bank = "Hong Leong Bank"; 
+					break;
+		        case '7': 
+					bank = "Bank Islam"; 
+					break;
+		    }
+		
+		    cout << "\nSelected Bank: " << bank << endl;
+        
+            cin.ignore();
+            cout << "\nCard number (13-16 digits): ";
             cin >> cardNumber;
             // validate card number
             while (!isValidCardNumber(cardNumber)) {
