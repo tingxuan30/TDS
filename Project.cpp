@@ -4859,43 +4859,95 @@ void viewOrderHistoryAdmin() {
         }
 
         string choice;
-        cout << "Do you want to search for a specific Order ID? (Y/N): ";
-        getline(cin,choice);
-
-        if (choice == "Y"|| choice == "y") {
-            quickSortOrder(orders, 0, orderCount - 1, "order_id");
-            string searchId;
-            cout << "\nEnter Order ID to search: ";
-            cin >> searchId;
-
-            Order* found = binarySearchOrder(orders, 0, orderCount - 1, searchId, "order_id");
-            if (found != nullptr) {
-            	clearScreen();
-            	cout << "==================================================================" << endl;
-			    cout << "|                       ORDER ID: "<< left << setw(31) << found->orderId << "|" << endl;
-			    cout << "==================================================================" << endl;
-	            cout << "------------------------------------------------------------------" << endl;
-	            cout << "| Member ID    : " << left << setw(48) << found->memberId << "|" << endl;
-	            cout << "| Date         : " << left << setw(48) << found->date << "|" << endl;
-	            cout << "| Payment      : " << left << setw(48) << found->paymentMethod << "|" << endl;
-	            cout << "------------------------------------------------------------------" << endl;
-	            for (int j = 0; j < found->itemCount; ++j) {
-	            	cout << "| Product ID   : " << left << setw(48) << found->items[j].product_id << "|" << endl;
-	                cout << "| Product Name : " << left << setw(48) << found->items[j].product_name << "|" << endl;
-	                cout << "| Attribute 1  : " << left << setw(48) << found->items[j].attribute1 << "|" << endl;
-	                cout << "| Attribute 2  : " << left << setw(48) << found->items[j].attribute2 << "|" << endl;
-	                cout << "| Quantity     : " << left << setw(48) << found->items[j].quantity << "|" << endl;
-	                cout << "| Price        : RM " << left << setw(45)<< fixed << setprecision(2) << found->items[j].price << "|" << endl;
-	                cout << "------------------------------------------------------------------" << endl;
-                }
-                cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << found->totalAmount << "|" << endl;
-                cout << "==================================================================" << endl;
-            } else {
-                cout << "\nOrder ID " << searchId << " not found." << endl;
-            }
-        }
+		cout << "Do you want to search orders? (Y/N): ";
+		getline(cin, choice);
+		
+		if (choice == "Y" || choice == "y") {
+		    string searchType;
+		    cout << "\nSearch by (1) Order ID or (2) Member ID? Enter 1 or 2: ";
+		    getline(cin, searchType);
+		
+		    if (searchType == "1") {
+		        quickSortOrder(orders, 0, orderCount - 1, "order_id");
+		        string searchId;
+		        cout << "\nEnter Order ID to search: ";
+		        getline(cin, searchId);
+		
+		        Order* found = binarySearchOrder(orders, 0, orderCount - 1, searchId, "order_id");
+		
+				clearScreen();
+				cout << "==================================================================" << endl;
+	            cout << "|                       ORDER ID: " << left << setw(31) << searchId << "|" << endl;
+	            cout << "==================================================================" << endl;
+		        if (found != nullptr) {
+		            cout << "------------------------------------------------------------------" << endl;
+		            cout << "| Member ID    : " << left << setw(48) << found->memberId << "|" << endl;
+		            cout << "| Date         : " << left << setw(48) << found->date << "|" << endl;
+		            cout << "| Payment      : " << left << setw(48) << found->paymentMethod << "|" << endl;
+		            cout << "------------------------------------------------------------------" << endl;
+		
+		            for (int j = 0; j < found->itemCount; ++j) {
+		                cout << "| Product ID   : " << left << setw(48) << found->items[j].product_id << "|" << endl;
+		                cout << "| Product Name : " << left << setw(48) << found->items[j].product_name << "|" << endl;
+		                cout << "| Attribute 1  : " << left << setw(48) << found->items[j].attribute1 << "|" << endl;
+		                cout << "| Attribute 2  : " << left << setw(48) << found->items[j].attribute2 << "|" << endl;
+		                cout << "| Quantity     : " << left << setw(48) << found->items[j].quantity << "|" << endl;
+		                cout << "| Price        : RM " << left << setw(45) << fixed << setprecision(2) << found->items[j].price << "|" << endl;
+		                cout << "------------------------------------------------------------------" << endl;
+		            }
+		            cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << found->totalAmount << "|" << endl;
+		            cout << "==================================================================" << endl;
+		        } else {
+		            cout << "\nOrder ID " << searchId << " not found." << endl;
+		        }
+		    } else if (searchType == "2") {
+		        string searchMemberId;
+		        cout << "\nEnter Member ID to search: ";
+		        getline(cin, searchMemberId);
+		
+		        bool found = false;
+		        clearScreen();
+		        cout << "==================================================================" << endl;
+		        cout << "|                 ORDERS FOR MEMBER ID: " << left << setw(25) << searchMemberId << "|" << endl;
+		        cout << "==================================================================" << endl;
+		
+		        for (int i = 0; i < orderCount; ++i) {
+		            if (orders[i]->memberId == searchMemberId) {
+		                found = true;
+		                cout << "------------------------------------------------------------------" << endl;
+		                cout << "| Order ID     : " << left << setw(48) << orders[i]->orderId << "|" << endl;
+		                cout << "| Date         : " << left << setw(48) << orders[i]->date << "|" << endl;
+		                cout << "| Payment      : " << left << setw(48) << orders[i]->paymentMethod << "|" << endl;
+		                cout << "------------------------------------------------------------------" << endl;
+		                for (int j = 0; j < orders[i]->itemCount; ++j) {
+		                    cout << "| Product ID   : " << left << setw(48) << orders[i]->items[j].product_id << "|" << endl;
+		                    cout << "| Product Name : " << left << setw(48) << orders[i]->items[j].product_name << "|" << endl;
+		                    cout << "| Attribute 1  : " << left << setw(48) << orders[i]->items[j].attribute1 << "|" << endl;
+		                    cout << "| Attribute 2  : " << left << setw(48) << orders[i]->items[j].attribute2 << "|" << endl;
+		                    cout << "| Quantity     : " << left << setw(48) << orders[i]->items[j].quantity << "|" << endl;
+		                    cout << "| Price        : RM " << left << setw(45) << fixed << setprecision(2) << orders[i]->items[j].price << "|" << endl;
+		                    cout << "------------------------------------------------------------------" << endl;
+		                }
+		                cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << orders[i]->totalAmount << "|" << endl;
+		                cout << "==================================================================" << endl;
+		            }
+		        }
+		
+		        if (!found) {
+		            cout << "\nNo orders found for Member ID: " << searchMemberId << endl;
+		        }
+		    } else {
+		        cout << "\nInvalid input. Press [ENTER] to return to order history menu.\n";
+		        cin.ignore();
+			    cin.get();
+			    viewOrderHistoryAdmin();
+		    }
+		}
+		else if (choice == "N" || choice == "n"){
+			return;
+		}
         else{
-        	cout << "\nPress [ENTER] to return to order history menu.";
+        	cout << "\nInvalid input. Press [ENTER] to return to order history menu.";
 		    cin.ignore();
 		    cin.get();
 		    viewOrderHistoryAdmin();
@@ -4906,10 +4958,10 @@ void viewOrderHistoryAdmin() {
         delete orders[i];
     }
 
-    cout << "\nPress [ENTER] to return to order history menu.";
+    cout << "\nPress [ENTER] to return to admin menu.";
     cin.ignore();
     cin.get();
-    viewOrderHistoryAdmin();
+    adminMenu(loggedInAdmin);;
 }
 
 // function to filter feedback by a specific rating level
