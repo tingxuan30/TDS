@@ -143,6 +143,9 @@ struct CartItem {
     }
 };
 
+// call ratingFeedback declarations dashboard-related functions
+class RatingFeedbackLinkedList;
+
 // Structure to store rating and feedback data
 struct RatingFeedback {
     string member_id;
@@ -157,6 +160,10 @@ struct RatingFeedback {
         feedback_text = fb_text;
         datetime = dt;
     }
+
+    // Declare dashboard-related functions as friends
+    friend void displayRatingSummary(RatingFeedbackLinkedList& RF);
+    friend void getRatingStats(RatingFeedbackLinkedList& RF, int& total, double& average, int ratingCounts[]);
 };
 
 // Structure to store sales report data 
@@ -480,6 +487,10 @@ public:
     }
     // declare friend function to allow access to saveFeedbackToFile function
     friend void saveFeedbackToFile(const RatingFeedback& feedback);
+
+     // declare dashboard-related functions as friends
+    friend void displayRatingSummary(RatingFeedbackLinkedList& RF);
+    friend void getRatingStats(RatingFeedbackLinkedList& RF, int& total, double& average, int ratingCounts[]);
 };
 
 // save feedback to file
@@ -5562,9 +5573,76 @@ public:
 
 };
 
+// Function to calculate rating statistics
+void getRatingStats(RatingFeedbackLinkedList& RF, int& total, double& average, int ratingCounts[]) {
+    total = 0;
+    double sum = 0.0;
+    for (int i = 0; i < 5; i++) ratingCounts[i] = 0;
+    
+    // get the first node in the linked list
+    Node<RatingFeedback>* current = RF.getHead();
+    
+    // loop through all nodes in the linked list
+    while (current != nullptr) {
+    	// get the rating from current feedback entry
+        int rating = current->data.rating;
+        
+        // only process valid ratings (1-5)
+        if (rating >= 1 && rating <= 5) {
+            total++;
+            sum += rating;
+            ratingCounts[rating-1]++;
+        }
+        current = current->next;
+    }
+    
+    // calculate average rating (avoid division by zero)
+    average = (total > 0) ? sum / total : 0.0;
+}
+
+// Function to display rating summary
+void displayRatingSummary(RatingFeedbackLinkedList& RF) {
+    int total = 0;
+    double average = 0.0;
+    int ratingCounts[5] = {0};
+    
+    // get statistics by calling getRatingStats()
+    getRatingStats(RF, total, average, ratingCounts);
+    
+    // display header for feedback summary section
+    cout << "|---------------------------------------------------------------|\n";
+    cout << "| FEEDBACK SUMMARY:                                             |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    
+    // display total ratings and average
+    cout << "| Total Ratings: " << setw(4) << total << " | Average: " 
+         << fixed << setprecision(1) << average << "/5.0" 
+         << setw(3) << "                        |\n";
+    cout << "|---------------------------------------------------------------|\n";
+    
+    // loop through each star rating (1-5)
+    for (int i = 0; i < 5; i++) {
+    	// display count and percentage for each star rating
+        cout << "| " << (i+1) << " star: " << setw(3) << ratingCounts[i] 
+             << " (" << setw(5) << fixed << setprecision(1) 
+             // calculate percentage (handle case when total is 0)
+             << (total > 0 ? (ratingCounts[i]*100.0/total) : 0.0) << "%)"
+             << setw(3) << " 						|\n";
+    }
+}
+
 // function to display admin dashboard
 void viewDashboard() {
     clearScreen();
+    
+    // reset all stream format states.
+    cout << resetiosflags(ios::fixed) 
+         << resetiosflags(ios::scientific)
+         << resetiosflags(ios::showpoint)
+         << resetiosflags(ios::showpos)
+         << resetiosflags(ios::right)
+         << resetiosflags(ios::left)
+         << setprecision(6);  // restore default precision
 
     // get current year for date processing
     time_t now = time(0);
@@ -5736,6 +5814,11 @@ void viewDashboard() {
              << "RM " << setw(30) << fixed << setprecision(2) << recentOrders[i].amount 
              << setw(3) << " |\n";
     }
+    
+    // display rating feedback summary
+    RatingFeedbackLinkedList RF;
+    RF.loadFeedback();
+    displayRatingSummary(RF);
 
     cout << "=================================================================\n";
     cout << "\nPress [ENTER] to continue...";
