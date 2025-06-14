@@ -950,48 +950,76 @@ int partitionOrder(Order** arr, int low, int high, const string& key, bool rever
     return i + 1;
 }
 
+// function to partition the Order array for quicksort based on rating/datetime
 int partitionRatingFeedback(RatingFeedback* arr, int low, int high, const string& key, bool reverse){
+	// select last element as pivot
     RatingFeedback pivot = arr[high];
+    
+    // index of smaller element, starts before the array
     int i = low - 1;
+    
+    // iterate through all elements except pivot
     for (int j = low; j < high; j++){
         bool condition = false;
+        
+        // check which field to sort by
         if (key == "rating"){
+        	
+        	// set condition based on sorting order rating
             condition = reverse ? arr[j].rating > pivot.rating : arr[j].rating < pivot.rating;
         }else if (key == "datetime"){
+        	
+        	// set condition based on sorting order datetime
         	condition = reverse ? arr[j].datetime > pivot.datetime : arr[j].datetime < pivot.datetime;
 		}
+		
+		// if current element meets the condition, swap it to the left partition
         if (condition){
-            i++;
-            swap(arr[i], arr[j]);
+            i++; // move partition boundary
+            swap(arr[i], arr[j]); // swap elements
         }
     }
+    
+    // place pivot in correct position between partitions
     swap(arr[i + 1], arr[high]);
+    
+    // return pivot index
     return i + 1;
 }
 
+//function for swapping and determining pivot for sales report(products stats count or revenue)
 int partition(ProductStats* arr, int low, int high, const string& sortBy) {
     double pivotValue;
+    
+    // determine pivot value based on sort criteria
     if (sortBy == "count") {
-        pivotValue = arr[high].count;
+        pivotValue = arr[high].count; // use count as pivot
     } else {
-        pivotValue = arr[high].revenue;
+        pivotValue = arr[high].revenue; // use revenue as pivot
     }
 
+	// index of smaller element, starts before the array
     int i = low - 1;
 
+	// iterate through all elements except pivot
     for (int j = low; j < high; j++) {
+    	
+    	// get current element's value based on sort criteria
         double currentValue = (sortBy == "count") ? arr[j].count : arr[j].revenue;
-        if (currentValue > pivotValue) {  // Descending order
-            i++;
-            swap(arr[i], arr[j]);
+        
+        // for descending order (higher values come first)
+        if (currentValue > pivotValue) {  // descending order
+            i++; // move partition boundary
+            swap(arr[i], arr[j]); // swap elements
         }
     }
 
+	// place pivot in correct position between partitions
     swap(arr[i + 1], arr[high]);
+    
+    // return pivot index
     return i + 1;
 }
-
-
 
 /*Main recursive quicksort function
   ==============================================================
@@ -1035,22 +1063,29 @@ void quickSortOrder(Order** arr, int low, int high, const string& key, bool reve
     }
 }
 
+// Quick Sort to sort rating feedback 
 void quickSortRatingFeedback(RatingFeedback* arr, int low, int high, const string& key, bool reverse){
     if (low < high) {
+    	//get the index of the pivot
         int pivot = partitionRatingFeedback(arr, low, high, key, reverse);
+        //sort the left side of the pivot
         quickSortRatingFeedback(arr, low, pivot - 1, key, reverse);
+        //sort the right side of the pivot
         quickSortRatingFeedback(arr, pivot + 1, high, key, reverse);
     }
 }
 
+// Quick Sort to sort sales report products status
 void quickSortProductStats(ProductStats* arr, int low, int high, const string& sortBy) {
     if (low < high) {
-        int pivotIndex = partition(arr, low, high, sortBy);
-        quickSortProductStats(arr, low, pivotIndex - 1, sortBy);
-        quickSortProductStats(arr, pivotIndex + 1, high, sortBy);
+    	//get the index of the pivot
+        int pivot = partition(arr, low, high, sortBy);
+        //sort the left side of the pivot
+        quickSortProductStats(arr, low, pivot - 1, sortBy);
+        //sort the right side of the pivot
+        quickSortProductStats(arr, pivot + 1, high, sortBy);
     }
 }
-
 
 /*Binary Search Algorithm
   ==============================================================
@@ -1097,6 +1132,7 @@ CartItem* binarySearchCartItem(CartItem* arr, int low, int high, const string& t
         else if (current < target) low = mid + 1;
         else high = mid - 1;
     }
+    //return pointer to null if no result found
     return nullptr;
 }
 
@@ -1117,6 +1153,7 @@ Order* binarySearchOrder(Order** arr, int first, int last, const string& target,
     return nullptr; 
 }
 
+// Binary Search to search rating feedback by id
 RatingFeedback* binarySearchRatingFeedback(RatingFeedback* arr, int first, int last, int targetRating) {
     while (first <= last) {
         int mid = first + (last - first) / 2;
@@ -1128,6 +1165,7 @@ RatingFeedback* binarySearchRatingFeedback(RatingFeedback* arr, int first, int l
             last = mid - 1;
         }
     }
+    //return pointer to null if no result found
     return nullptr;
 }
 
@@ -3519,6 +3557,7 @@ void submitRatingFeedback(const string& member_id) {
     memberMenu(loggedInMember);
 }
 
+
 void viewMemberList(const string& statusFilter) {
     memberList.loadMembers();
     Node<Member>* current = memberList.getHead();
@@ -3597,6 +3636,8 @@ void viewMemberList(const string& statusFilter) {
         }
     }
 }
+
+
 bool loadProductsIntoList(Products& productList) {
     ifstream inFile(PRODUCT_FILE);
     if (!inFile) return false;
@@ -3625,6 +3666,8 @@ bool loadProductsIntoList(Products& productList) {
     inFile.close();
     return true;
 }
+
+
 bool saveProductList(const Products& productList) {
     ofstream outFile(PRODUCT_FILE);
     if (!outFile) return false;
@@ -3662,31 +3705,50 @@ string getNextProductId() {
     }
     return to_string(lastId);
 }
+
+// function to add new products
 void addProduct(){
+	// create Products object to manage product operations
 	Products products;
+	
+	// attempt to load existing products, show error if failed
     if (!loadProductsIntoList(products)) {
 	    cout << "Error loading products!\n";
 	    return;
 	}
 
+	// default status for new products
     string status = "Active";
+    // variables to store product details
     string product_name, category, price, stock, description;
+    // available product categories
     string categories[] = {"Pizza", "Side", "Beverage"};
+    
     int choice;
+    
     clearScreen();
+    
+    // product name input loop
     while (true) {
         cout << "\nEnter product name (or 'C' to cancel): ";
         getline(cin, product_name);
+        
+        // check for cancellation
         if (product_name == "C" || product_name == "c") {
             cout << "\nOperation cancelled.\n";
             cout << "Press [ENTER] to continue.";
             cin.ignore();
             manageProduct();
         }
+        
+        // validate product name
         bool valid = true;
 		int charCount = 0;
+		
 		for (int i = 0; i < product_name.length(); ++i) {
 		    char c = product_name[i];
+		    
+		    // only allow alphanumeric, digit and spaces
 		    if (!isalnum(c) && c != ' ') {
 		        valid = false;
 		        break;
@@ -3694,20 +3756,28 @@ void addProduct(){
 		    if (isalnum(c)) 
 		        charCount++;
 		}
+		
+		// check for empty name
 		if (product_name.empty()) {
 		    cout << "Name cannot be empty.\n";
 		    continue;
 		}
+		
+		// validate name format and length
 		if (!valid || charCount < 3 || charCount > 100) {
 		    cout << "Invalid name! Please enter a valid name.\n";
 		    continue;
 		}
+		
+		// check if product name already exists
         if (products.productNameExists(product_name)){
         	cout << "This product name already exist, please use the different name.\n";
         	continue;
 		}
         break;
     }
+    
+    // category selection loop
     while(true){
     	cout << "\nSelect category\n";
     	for (int i = 0; i < 3; ++i) {
@@ -3717,7 +3787,9 @@ void addProduct(){
         string input;
 	    getline(cin, input);
 	    try {
-	        choice = stoi(input);
+	        choice = stoi(input); // convert input to integer
+	        
+	        // validate choice range
 	        if (choice >= 1 && choice <= 3) {
 	            category = categories[choice - 1];
 	            break;
@@ -3728,16 +3800,21 @@ void addProduct(){
 	        cout << "Invalid input. Please enter a number.\n";
 	    }
 	}
+	
+	// price input loop
 	while (true) {
         cout << "\nEnter price: ";
         getline(cin, price);
         try {
+        	// validate price is positive number
             if (stof(price) <= 0) throw invalid_argument("Price must be positive.");
             break;
         } catch (const invalid_argument& e) {
             cout << "Invalid price! Please enter a valid positive number.\n";
         }
     }
+    
+    // description input loop
     while (true){
     	cout << "\nEnter product description: ";
     	getline(cin, description);
@@ -3747,15 +3824,22 @@ void addProduct(){
 	        break;
 	    }
 	}
+	
+	 // generate unique product ID
 	string product_id = getNextProductId();
+	
+	// create new Product object with collected data
 	Product newProduct(product_id, product_name, category, stod(price), description, status);
 
+	// save the new product
 	products.saveProduct(newProduct); 
 	cout << product_name << " added successfully!\n";
     cout << "Press [ENTER] to continue.";
     cin.ignore();
     manageProduct();
 }
+
+
 void editProduct(const string& currentCategory) {
     string selection, new_name,category_input, new_category, price_input, status_input, new_status, new_description;
     double new_price;
@@ -3933,6 +4017,7 @@ void editProduct(const string& currentCategory) {
     manageProduct();
 }
 
+
 void changeProductStatus(const string& currentCategory){
 	string selection, choice, status_input, new_status;
 	cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
@@ -3994,6 +4079,8 @@ void changeProductStatus(const string& currentCategory){
     cin.ignore();
     manageProduct();
 }
+
+
 void displayProductAdmin(const Product& product) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
@@ -4007,8 +4094,13 @@ void displayProductAdmin(const Product& product) {
     printWrappedText(product.description);
     cout << "----------------------------------------------------------------------" << endl;
 }
+
+//function to display manage product category selection menu
 void manageProduct() {
+	// create Products object to manage product operations
 	Products P;
+	
+	// attempt to load products, return to main menu if failed
     if (!loadProducts()) {
         cout << "Failed to load products." << endl;
         cout << "Press [ENTER] to return to Main Menu.";
@@ -4018,6 +4110,8 @@ void manageProduct() {
         mainMenu();
         return;
     }
+    
+    // main category selection loop
     while (true) {
         clearScreen();
         cout << "===============================================================" << endl;
@@ -4027,16 +4121,23 @@ void manageProduct() {
         cout << "| 3. Beverage                                                 |" << endl;
         cout << "| 4. Back to Main Menu                                        |" << endl;
         cout << "===============================================================" << endl;
+        
         string choiceString;
 		cout << "Enter your choice : ";
 		getline(cin, choiceString);
+		
+		// validate input is not empty
 		if (choiceString.empty()) {
 		    cout << "Choice cannot be empty. Press [ENTER] to retry.";
 		    cin.get();
 		    continue;
 		}
+		
+		// convert input to integer
 		int choice = stoi(choiceString);
         string categories[] = {"Pizza", "Side", "Beverage"};
+        
+        // validate choice range
         if (choice < 1 || choice > 4) {
             cout << "Invalid choice. Press [ENTER] to retry.";
             cin.get();
@@ -4047,18 +4148,28 @@ void manageProduct() {
             adminMenu(loggedInAdmin);
             return;
         }
+        
+        // get selected category name
         string selectedCategory = categories[choice - 1];
+        
+        // category operations loop
         while (true) {
             clearScreen();
             cout << "Products in Category: " << selectedCategory << endl;
+            
+            // load products to ensure data is current
             loadProducts();
             bool found = false;
+            
+            // display all products in selected category
             for (int i = 0; i < productCount; i++) {
                 if (products[i].category == selectedCategory) {
                     displayProductAdmin(products[i]);
                     found = true;
                 }
             }
+            
+            // handle case when no products found
             if (!found) {
                 cout << "\nNo available products found in '" << selectedCategory << "' category." << endl;
             }
@@ -4072,6 +4183,8 @@ void manageProduct() {
             string selection;
             cout << "\nEnter your choice: ";
             getline(cin,selection);
+            
+            // if-else statement to determine the corresponding actions
             if(selection == "1") {
 	            clearScreen();
 	            addProduct();
@@ -4096,6 +4209,8 @@ void manageProduct() {
         }
     }
 }
+
+
 void changeMemberStatus() {
     memberList.loadMembers();
     clearScreen();
@@ -4168,6 +4283,8 @@ void changeMemberStatus() {
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
+
+
 void manageMember() {
     while (true) {
         clearScreen();
@@ -4201,6 +4318,8 @@ void manageMember() {
         }
     }
 }
+
+
 void viewAdminList(const string& statusFilter) {
     adminList.loadAdmins();
     Node<Admin>* current = adminList.getHead();
@@ -4281,6 +4400,8 @@ void viewAdminList(const string& statusFilter) {
         }
     }
 }
+
+
 void changeAdminStatus() {
    	adminList.loadAdmins();
     clearScreen();
@@ -4359,6 +4480,8 @@ void changeAdminStatus() {
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
+
+
 void saveAdmin(const Admin& admin) {
     bool fileIsEmpty = true;
     {
@@ -4384,6 +4507,8 @@ void saveAdmin(const Admin& admin) {
              << admin.status << "\n";
     }
 }
+
+
 void addNewAdmin() {
 	string admin_id = getNextAdminId();
 	string position = "admin";
@@ -4574,6 +4699,8 @@ void addNewAdmin() {
     cout << "Press [ENTER] to continue.";
     cin.ignore();
 }
+
+
 void manageAdmin() {
     while (true) {
     	string choice;
@@ -4619,6 +4746,8 @@ void manageAdmin() {
         }
     }
 }
+
+
 void viewOrderHistoryAdmin() {
     const int MAX_ORDERS = 100;
     Order* orders[MAX_ORDERS];
@@ -4783,18 +4912,22 @@ void viewOrderHistoryAdmin() {
     viewOrderHistoryAdmin();
 }
 
+// function to filter feedback by a specific rating level
 void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
     clearScreen();
     cout << "Enter the rating level to filter by (1 to 5): ";
     string input;
     getline(cin, input);
 
+    // validate input is not empty
     if (input.empty()) {
         cout << "Invalid input. Rating cannot be empty.\n";
         cin.ignore();
         clearScreen();
     	manageRating();
     }
+    
+    // check input contains only digits
     bool onlyDigits = true;
         for (int i = 0; i < input.length(); ++i) {
             if (!isdigit(input[i])) {
@@ -4802,12 +4935,16 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
                 break;
             }
         }
+        
+    // handle non-numeric input
     if (!onlyDigits) {
         cout << "Invalid input. Please enter a number between 1 and 5.\n";
         cin.ignore();
         clearScreen();
     	manageRating();
     }
+    
+    // convert and validate rating range
     int rate_filter = stoi(input);
     if (rate_filter < 1 || rate_filter > 5) {
         cout << "Invalid rating. Please enter a number between 1 and 5.\n";
@@ -4815,27 +4952,38 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
         clearScreen();
     	manageRating();
     }
+    
+    // count total feedback records
     int total = 0;
     Node<RatingFeedback>* current = RF.getHead();
     while (current != nullptr) {
         total++;
         current = current->next;
     }
+    
+    // handle case when no feedback exists
     if (total == 0) {
         cout << "No feedback records found.\n";
         cin.get();
         clearScreen();
         manageRating();
     }
+    
+    // copy feedback to array for sorting and searching
     RatingFeedback* feedbackArr = new RatingFeedback[total];
     current = RF.getHead();
     for (int i = 0; i < total && current != nullptr; ++i) {
         feedbackArr[i] = current->data;
         current = current->next;
     }
+    
+    // sort feedback by rating
     quickSortRatingFeedback(feedbackArr, 0, total - 1, "rating", false);
+    
+    // search for matching ratings
     RatingFeedback* match = binarySearchRatingFeedback(feedbackArr, 0, total - 1, rate_filter);
     bool found = false;
+    
     if (match != nullptr) {
         cout << "===========================================================================\n";
         cout << "|                    Filtered Feedback (Rating = " << rate_filter << ")                       |\n";
@@ -4852,6 +5000,8 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
             }
         }
     }
+    
+    // handle case when no matching ratings found
     if (!found) {
     	cout << "---------------------------------------------------------------------------\n";
         cout << "|                                                                         |\n";
@@ -4859,26 +5009,37 @@ void filterFeedbackRating(RatingFeedbackLinkedList& RF) {
         cout << "|                                                                         |\n";
         cout << "---------------------------------------------------------------------------\n";
     }
+    
+    // clean up and return to menu
+    delete[] feedbackArr;
     cout << "\nPress [ENTER] to return to feedback menu.";
     cin.get();
     clearScreen();
     manageRating();
 }
+
+// function to sort feedback by various criteria
 void sortFeedbackRating(){
 	RatingFeedbackLinkedList RF;
 	RF.loadFeedback();
+	
+	// count total feedback records
 	int total = 0;
     Node<RatingFeedback>* current = RF.getHead();
     while (current != nullptr) {
         total++;
         current = current->next;
     }
+    
+    // copy feedback to array for sorting
     RatingFeedback* feedbackArr = new RatingFeedback[total];
     current = RF.getHead();
     for (int i = 0; i < total && current != nullptr; ++i) {
         feedbackArr[i] = current->data;
         current = current->next;
     }
+    
+    // handle case when no feedback exists
     if (total == 0) {
         cout << "No feedback records found.\n";
         return;
@@ -4894,6 +5055,8 @@ void sortFeedbackRating(){
 	cout << "-------------------------------" << endl;
 	cout << "Enter your choice (1-5): ";
     getline(cin, choice);
+    
+    // process sorting choice
     if (choice == "1") {
         clearScreen();
         cout << "======================================================================" << endl;
@@ -4931,17 +5094,23 @@ void sortFeedbackRating(){
 	    cout << "| Datetime 		: " << setw(43) << feedbackArr[i].datetime << "|\n";
 	    cout << "----------------------------------------------------------------------\n";
 	}
+	
+	// clean up and return to menu
 	delete[] feedbackArr;
 	cout << "\nPress [ENTER] to return to feedback menu.";
     cin.get();
     clearScreen();
     manageRating();
 }
+
+// function to display feedback main menu
 void manageRating() {
 	RatingFeedbackLinkedList RF;
 	RF.loadFeedback();
 	Node<RatingFeedback>* current = RF.getHead();
 	bool foundRatingFeedback = false;
+	
+	// display all feedback records
     while (current != nullptr) {
         RatingFeedback fb = current->data;
         foundRatingFeedback = true;
@@ -4954,6 +5123,8 @@ void manageRating() {
         cout << "---------------------------------------------------------------------------\n";
         current = current->next;
     }
+    
+    // handle case when no feedback exists
     if (!foundRatingFeedback) {
     	cout << "---------------------------------------------------------------------------\n";
         cout << "|                                                                         |\n";
@@ -4965,6 +5136,8 @@ void manageRating() {
         cin.get();
         adminMenu(loggedInAdmin);
     }
+    
+    // feedback management menu
     while (true){
         cout << "1. Filter feedback by rate level\n";
         cout << "2. Sort feedback and rating\n";
@@ -4987,15 +5160,18 @@ void manageRating() {
     }
 }
 
+
 class SalesReportGenerator {
 private:
+	// max number of orders to process
     const int MAX_ORDERS = 100;
     
-    // Method to load orders from file
+    // function to load orders from file
     int loadOrders(Order** orders) {
         int orderCount = 0;
         string line;
 
+		//open purchase_history.txt
         ifstream file(PURCHASE_HISTORY_FILE);
         if (!file) {
             cout << "No purchase history found." << endl;
@@ -5005,25 +5181,30 @@ private:
             return 0;
         }
 
+		// read file 
         while (orderCount < MAX_ORDERS && getline(file, line)) {
-            if (line.empty()) continue;
+            if (line.empty()) continue; // skip empty line
 
+			// count commas to calidate line format
             int commaCount = 0;
             for (int i = 0; i < line.length(); i++) {
                 if (line[i] == ',') commaCount++;
             }
 
+			// process order header line (contains 3 commas)
             if (commaCount == 3) {
                 stringstream ss(line);
                 string orderId, memberId, datetime, paymentMethod, totalAmountStr;
                 double totalAmount;
 
+				// parse order header fields
                 getline(ss, orderId, ',');
                 getline(ss, memberId, ',');
                 getline(ss, datetime, ',');
                 getline(ss, totalAmountStr, ',');
                 getline(ss, paymentMethod);
 
+				// convert total amount with error handling
                 try {
                     totalAmount = stod(totalAmountStr);
                 }
@@ -5034,14 +5215,17 @@ private:
                     totalAmount = 0.0;
                 }
 
+				// process order items
                 const int MAX_ITEMS = 20;
                 CartItem tempItems[MAX_ITEMS];
                 int itemCount = 0;
 
+				// read items until empty line or max items reached
                 while (itemCount < MAX_ITEMS && getline(file, line) && !line.empty()) {
                     stringstream itemSS(line);
                     string qtyStr, priceStr;
 
+					// parse item fields
                     getline(itemSS, tempItems[itemCount].product_id, ',');
                     getline(itemSS, tempItems[itemCount].product_name, ',');
                     getline(itemSS, qtyStr, ',');
@@ -5049,6 +5233,7 @@ private:
                     getline(itemSS, tempItems[itemCount].attribute1, ',');
                     getline(itemSS, tempItems[itemCount].attribute2);
 
+					// convert quantities and prices with error handling
                     try {
                         tempItems[itemCount].quantity = stoi(qtyStr);
                         tempItems[itemCount].price = stod(priceStr);
@@ -5062,6 +5247,7 @@ private:
                     itemCount++;
                 }
 
+					// create new order and add to array
                 orders[orderCount] = new CashOrder(orderId, memberId, datetime, totalAmount, tempItems, itemCount);
                 orders[orderCount]->paymentMethod = paymentMethod;
                 orderCount++;
@@ -5069,32 +5255,36 @@ private:
         }
         file.close();
 
+		// sort orders by datetime (newest first)
         quickSortOrder(orders, 0, orderCount - 1, "datetime", true);
         return orderCount;
     }
 
-    // Helper method to free memory
+    // helper function to free allocated order memory
     void freeOrders(Order** orders, int orderCount) {
         for (int i = 0; i < orderCount; i++) {
             delete orders[i];
         }
     }
 	
+	// function to display sales summary with top products
 	void displaySalesSummary(Order** orders, int orderCount, const string& sortBy = "revenue") {
 	    double totalRevenue = 0.0;
 	    int totalOrders = orderCount;
 	    
-	    // Count products
+	    // array to track product statistics
 	    const int MAX_PRODUCTS = 100;
 	    ProductStats products[MAX_PRODUCTS];
 	    int productCount = 0;
 	
+		// calculate totals and product stats
 	    for (int i = 0; i < orderCount; i++) {
 	        totalRevenue += orders[i]->totalAmount;
 	        for (int j = 0; j < orders[i]->itemCount; j++) {
 	            const CartItem& item = orders[i]->items[j];
 	            double itemRevenue = item.price * item.quantity;
 	            
+	            // check if product already tracked
 	            bool found = false;
 	            for (int k = 0; k < productCount; k++) {
 	                if (products[k].name == item.product_name) {
@@ -5105,6 +5295,7 @@ private:
 	                }
 	            }
 	            
+	            // add new product if not found
 	            if (!found && productCount < MAX_PRODUCTS) {
 	                products[productCount].name = item.product_name;
 	                products[productCount].count = item.quantity;
@@ -5114,15 +5305,19 @@ private:
 	        }
 	    }
 	
+		// sort products by specified criteria
 	    quickSortProductStats(products, 0, productCount - 1, sortBy);
 	
+		// display summary header
 	    cout << "\n+------------------------------------------------------------------------------------------------------------------+\n";
 	    cout << "|                                                 SALES SUMMARY                                                    |\n";
 	    cout << "+------------------------------------------------------------------------------------------------------------------+\n";
 	    cout << "| Total Orders      : " << setw(93) << left << totalOrders << "|\n";
 	    cout << "| Total Revenue     : RM " << setw(90) << left << fixed << setprecision(2) << totalRevenue << "|\n";
 	    cout << "+------------------------------------------------------------------------------------------------------------------+\n";
-	    if (sortBy == "revenue") {
+	    
+	    // display appropriate heading based on sort criteria
+		if (sortBy == "revenue") {
 		    cout << "| Top Selling Products by Revenue:                                                                                 |\n";
 		} else if (sortBy == "count") {
 		    cout << "| Top Selling Products by Quantity Sold:                                                                           |\n";
@@ -5130,7 +5325,7 @@ private:
 		    cout << "| Top Selling Products:                                                                                            |\n";
 		}
 
-	    
+	    // display top 5 products
 	    int count = min(5, productCount);
 
 		for (int i = 0; i < count; i++) {
@@ -5148,7 +5343,9 @@ private:
 
 	}
     
+    // function to display simplified order details in table format
     void displaySimplifiedOrderDetails(Order* order) {
+    	// display each item in the order
         for (int i = 0; i < order->itemCount; ++i) {
             const CartItem& item = order->items[i];
             string product_name = item.attribute2 + " " + item.product_name + " (" + item.attribute1 + ")";
@@ -5157,6 +5354,7 @@ private:
                  << "| " << setw(10) << right << item.quantity
                  << "| " << setw(15) << right << fixed << setprecision(2) << item.price << " |\n";
         }
+        // display order total
         cout << "+--------------------------------------------------------------------------------------------------------+\n";
         cout << "| " << setw(85) << right << "TOTAL: " 
              << "| " << setw(15) << right << fixed << setprecision(2) << order->totalAmount << " |\n";
@@ -5165,6 +5363,7 @@ private:
 
 public:
 	
+	// function to get basic sales statistics
 	void getSalesStats(double& totalRevenue, int& totalOrders) {
         Order* orders[MAX_ORDERS];
         totalOrders = loadOrders(orders);
@@ -5175,6 +5374,7 @@ public:
         freeOrders(orders, totalOrders);
     }
     
+    // function to display main report generation menu
     void generateReport() {
 	    while (true) {
 	        clearScreen();
@@ -5194,12 +5394,14 @@ public:
 	        Order* orders[MAX_ORDERS];
 	        int orderCount = loadOrders(orders);
 	
+			// display complete report
 	        if (choice == "1") {
 	            clearScreen();
 	
 				string sortChoice;
 				string sortBy;
 				
+				// get sorting preference
 				while (true) {
 					cout << "--------------------------------------" << endl;
 				    cout << "| Sort sales summary by: " << "            |" << endl;
@@ -5223,7 +5425,6 @@ public:
 				    }
 				}
 
-	
 	            displaySalesSummary(orders, orderCount, sortBy);
 	
 	            cout << "\n+--------------------------------------------------------------------------------------------------------+\n";
@@ -5235,6 +5436,7 @@ public:
 	                 << " | " << setw(15) << "Unit Price" << " |\n";
 	            cout << "+--------------------------------------------------------------------------------------------------------+\n";
 	            
+	            // display all order details
 	            for (int i = 0; i < orderCount; i++) {
 	                displaySimplifiedOrderDetails(orders[i]);
 	            }
@@ -5246,6 +5448,7 @@ public:
 	            cout << "\nPress [ENTER] to continue.";
 	            cin.get();
 	        }
+	        // display summary only
 	        else if (choice == "2") {
 	            clearScreen();
 	            
@@ -5279,6 +5482,7 @@ public:
 	            cout << "\nPress [ENTER] to continue.";
 	            cin.get();
 	        }
+	        // display sales list only
 	        else if (choice == "3") {
 			    clearScreen();
 			
@@ -5321,34 +5525,39 @@ public:
 
 };
 
+// function to display admin dashboard
 void viewDashboard() {
     clearScreen();
 
-    // Get current year
+    // get current year for date processing
     time_t now = time(0);
     tm* ltm = localtime(&now);
     int currentYear = 1900 + ltm->tm_year;
     const int MONTHS_IN_YEAR = 12;
     
-    // Total Orders and Sales
+    // get total sales and orders data
     SalesReportGenerator report;
     double totalSales = 0.0;
     int totalOrders = 0;
     report.getSalesStats(totalSales, totalOrders); 
 
-    // Product Statistics
+	// Products Statistics
+    // load and calculate product statistics
     if (!loadProducts()) {
         cout << "Error loading products!\n";
         return;
     }
     int totalProducts = productCount;
     int activeProducts = 0, inactiveProducts = 0;
+    
+    // count active/inactive products
     for (int i = 0; i < productCount; i++) {
         if (products[i].status == "Active") activeProducts++;
         else inactiveProducts++;
     }
 
     // Member Statistics
+    // load and calculate member statistics
     memberList.loadMembers();
     int totalMembers = 0, activeMembers = 0, inactiveMembers = 0;
     Node<Member>* memberCurrent = memberList.getHead();
@@ -5359,40 +5568,49 @@ void viewDashboard() {
         memberCurrent = memberCurrent->next;
     }
 
-    // Monthly Sales Initialization
+    // initialize monthly sales array
     MonthlySales monthlySales[MONTHS_IN_YEAR];
     for (int i = 0; i < MONTHS_IN_YEAR; i++) {
         string month = (i+1 < 10) ? "0" + to_string(i+1) : to_string(i+1);
         monthlySales[i] = {month + "/" + to_string(currentYear), 0.0};
     }
 
-    // Sales Data Reading
+    // process and read the sales data from file
     ifstream file(PURCHASE_HISTORY_FILE);
     if (file) {
         string line;
         while (getline(file, line)) {
             if (line.empty()) continue;
 
+			// process order headers (lines starting with ORD)
             if (line.find("ORD") == 0) {
                 string parts[5];
                 stringstream ss(line);
+                
+                // split order line into components
                 for (int i = 0; i < 5 && getline(ss, parts[i], ','); i++);
 
                 try {
                     string date = parts[2];
+                    
+                    // extract just the date portion (without time)
                     size_t spacePos = date.find(' ');
                     if (spacePos != string::npos)
                         date = date.substr(0, spacePos);
 
+					// parse month and year from date
                     size_t firstSlash = date.find('/');
                     size_t secondSlash = date.find('/', firstSlash + 1);
                     string month = date.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+                    
+                    // format month with leading zero if needed
                     if (month.length() == 1) month = "0" + month;
                     string year = date.substr(secondSlash + 1);
                     string monthYear = month + "/" + year;
 
-                    double amount = stod(parts[3]);
+                    double amount = stod(parts[3]); // convert amount to double
 
+					// add amount to appropriate month
                     for (int i = 0; i < MONTHS_IN_YEAR; i++) {
                         if (monthlySales[i].monthYear == monthYear) {
                             monthlySales[i].amount += amount;
@@ -5402,44 +5620,50 @@ void viewDashboard() {
                 } catch (const invalid_argument& e) {
                     continue;
                 }
-
+				
+				// skip item lines for this order
                 while (getline(file, line) && !line.empty()) {}
             }
         }
         file.close();
     }
 
-    // Display Dashboard
+    // display dashboard
     cout << "=================================================================\n";
     cout << "|                           DASHBOARD                           |\n";
     cout << "=================================================================\n";
     cout << "| SUMMARY STATISTICS:                                           |\n";
+    // display product statistics
     cout << "|---------------------------------------------------------------|\n";
     cout << "| Products: " << setw(4) << totalProducts << " total | " 
          << setw(4) << activeProducts << " active | " 
          << setw(4) << inactiveProducts << " inactive" 
          << setw(14) << " |\n";
+    // display member statistics
     cout << "| Members:  " << setw(4) << totalMembers << " total | " 
          << setw(4) << activeMembers << " active | " 
          << setw(4) << inactiveMembers << " inactive" 
          << setw(14) << " |\n";
+    // display order and sales statistics
     cout << "| Orders:   " << setw(4) << totalOrders << " total | " 
          << "Sales: RM " << setw(6) << fixed << setprecision(2) << totalSales 
          << setw(25) << " |\n";
     cout << "|---------------------------------------------------------------|\n";
+    // display monthly sales header
     cout << "| MONTHLY SALES (" << currentYear << "):                                         |\n";
     cout << "|---------------------------------------------------------------|\n";
+    // display each month's sales
     for (int i = 0; i < MONTHS_IN_YEAR; i++) {
         cout << "| " << monthlySales[i].monthYear << ": RM " 
              << setw(10) << fixed << setprecision(2) << monthlySales[i].amount 
              << setw(42) << " |\n";
     }
 
-    // Display Recent Orders (Last 3)
+    // display recent orders (last 3)
     cout << "|---------------------------------------------------------------|\n";
     cout << "| RECENT ORDERS (Last 3)                                        |\n";
     cout << "|---------------------------------------------------------------|\n";
-    OrderRecords recentOrders[100];
+    OrderRecords recentOrders[100]; // buffer for recent orders
     int orderIdx = 0;
     
     file.open(PURCHASE_HISTORY_FILE);
@@ -5469,7 +5693,7 @@ void viewDashboard() {
         file.close();
     }
 
-    // Print last 3 orders
+    // display the 3 most recent orders (from the end of the array)
     for (int i = orderIdx - 1; i >= 0 && orderIdx - i <= 3; i--) {
         cout << "| " << setw(25) << left << recentOrders[i].info.substr(0, 25) << " | "
              << "RM " << setw(30) << fixed << setprecision(2) << recentOrders[i].amount 
@@ -5480,8 +5704,6 @@ void viewDashboard() {
     cout << "\nPress [ENTER] to continue...";
     cin.get();
 }
-
-
 
 //function to display adminMenu
 void adminMenu(Admin loggedInAdmin) {
