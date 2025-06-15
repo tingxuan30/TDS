@@ -4490,7 +4490,7 @@ void changeAdminStatus() {
     string chosenID;
     // search admin ID operations loop
     while (true) {
-        cout << "\nEnter admin name to change status (or 'C' to cancel): ";
+        cout << "\nEnter admin ID to change status (or 'C' to cancel): ";
         getline(cin, chosenID);
         // handle cancel option
         if (chosenID == "C" || chosenID == "c") {
