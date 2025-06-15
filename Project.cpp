@@ -4742,7 +4742,7 @@ void manageAdmin() {
 void viewSortedOrderHistoryAdmin(Order* orders[], int orderCount) {
     clearScreen();
     cout << "==================================================================" << endl;
-    cout << "|                    SORTED ORDERS HISTORY                       |" << endl;
+    cout << "|                    SORTED ORDERS RECORDS                       |" << endl;
     cout << "==================================================================" << endl;
 
     for (int i = 0; i < orderCount; ++i) {
@@ -4854,7 +4854,7 @@ void viewOrderHistoryAdmin() {
 
     clearScreen();
     cout << "==================================================================" << endl;
-    cout << "|                        ORDERS HISTORY                          |" << endl;
+    cout << "|                        ORDERS RECORDS                          |" << endl;
     cout << "==================================================================" << endl;
 
     if (orderCount == 0) {
