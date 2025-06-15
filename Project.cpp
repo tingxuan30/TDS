@@ -3548,8 +3548,9 @@ void submitRatingFeedback(const string& member_id) {
     memberMenu(loggedInMember);
 }
 
-
+// function for admin to view active or inactive member list
 void viewMemberList(const string& statusFilter) {
+    // load member data from file
     memberList.loadMembers();
     Node<Member>* current = memberList.getHead();
     clearScreen();
@@ -3561,8 +3562,11 @@ void viewMemberList(const string& statusFilter) {
         cout << "|                          INACTIVE MEMBER LIST                           |\n";      
     }
     cout << "===========================================================================\n"; 
+    // track if any mmeber matching the filter were found
     bool foundAny = false;
+    // while the current is not null
     while (current != nullptr) {
+        // check if current member matches the status filter
         if (current->data.status == statusFilter) {
             foundAny = true;
             cout << "| Member ID         : " << left << setw(52) << current->data.member_id << "|\n";
@@ -3573,6 +3577,7 @@ void viewMemberList(const string& statusFilter) {
         }
         current = current->next;
     }
+    // handle case where no members were found
     if (!foundAny) {
         cout << "|                                                                         |\n";
         cout << "|                      No " << left << setw(48) << (statusFilter + " members found.") << "|\n";
@@ -3581,24 +3586,31 @@ void viewMemberList(const string& statusFilter) {
 		cout << "\nPress [ENTER] to return.";
         cin.ignore();
         clearScreen();
-        return; 
+        return; // exit function early if no members found
 	}
+    // member search functionality
     while (true) {
         string searchChoice;
         cout << "\nDo you want to search member by ID? (Y/N to return): ";
         getline(cin, searchChoice);
+        // handle return option
         if (searchChoice == "N" || searchChoice == "n") {
             return;
+        // handle search option
         } else if (searchChoice == "Y" || searchChoice == "y") {
             string searchId;
             cout << "\nEnter Member ID to search (or 'C' to cancel): ";
             getline(cin, searchId);
+            // handle cancel option
             if (searchId == "C" || searchId == "c") {
                 continue;
             }
+            // reset to beginning of list for new search
             current = memberList.getHead();
             bool found = false;
+            // while the current is not null
             while (current != nullptr) {
+                // check for matching ID and status
                 if (current->data.member_id == searchId && current->data.status == statusFilter) {
                     clearScreen();
                     cout << "===========================================================================\n";
@@ -3615,6 +3627,7 @@ void viewMemberList(const string& statusFilter) {
                 }
                 current = current->next;
             }
+            // handle case where member not found
             if (!found) {
                 cout << "Member with ID " << searchId << " not found in " << statusFilter << " members.\n";
             }
@@ -3622,18 +3635,24 @@ void viewMemberList(const string& statusFilter) {
             cin.ignore();
             clearScreen();
             break;
-        } else {
+        } 
+        // handle invalid input
+        else {
             cout << "Invalid choice. Please enter Y (Yes), or N (No).\n";
         }
     }
 }
 
-
+// function to load product into product linked list
 bool loadProductsIntoList(Products& productList) {
+    // open product file
     ifstream inFile(PRODUCT_FILE);
-    if (!inFile) return false;
+    // return false if file opening failed
+    if (!inFile)
+        return false;
 
     string line;
+    // read file line by line
     while (getline(inFile, line)) {
         if (line.empty()) continue;
         
@@ -3651,23 +3670,29 @@ bool loadProductsIntoList(Products& productList) {
         try { tempProduct.price = stod(parts[3]); } catch (const invalid_argument& e) { tempProduct.price = 0; }
         tempProduct.description = parts[4];
         tempProduct.status = parts[5];
-        
+
+        // add product to the linked list
         productList.append(tempProduct);
     }
+    // close file
     inFile.close();
     return true;
 }
 
-
+// saves product list to product file
 bool saveProductList(const Products& productList) {
+    // open product file
     ofstream outFile(PRODUCT_FILE);
     if (!outFile) return false;
 
+    // start at head of linked list
     Node<Product>* current = productList.getHead();
     bool firstLine = true;
+
+    // while the current is not null
     while (current != nullptr) {
         if (!firstLine) outFile << "\n";
-        
+        // write product data in file
         outFile << current->data.product_id << ","
                << "\"" << current->data.product_name << "\","
                << "\"" << current->data.category << "\","
@@ -3675,25 +3700,33 @@ bool saveProductList(const Products& productList) {
                << "\"" << current->data.description << "\","
                << "\"" << current->data.status << "\"";
         
+        // move to next product
         current = current->next;
         firstLine = false;
     }
+    // close file
     outFile.close();
     return true;
 }
+
+// generates and return the next product ID
 string getNextProductId() {
     int lastId = 0;
+    // read last used ID from file
     ifstream file(PRODUCT_ID_FILE);
     if (file) {
         file >> lastId;
         file.close();
     }
+    // increment to get next product ID
     lastId++;
+    // save new last used ID back to file
     ofstream outFile(PRODUCT_ID_FILE);
     if (outFile) {
         outFile << lastId; 
         outFile.close();
     }
+    // return product ID
     return to_string(lastId);
 }
 
@@ -3830,16 +3863,18 @@ void addProduct(){
     manageProduct();
 }
 
-
+// function for admin to edit product details
 void editProduct(const string& currentCategory) {
     string selection, new_name,category_input, new_category, price_input, status_input, new_status, new_description;
     double new_price;
     string categories[] = {"Pizza", "Side", "Beverage"};
     int choice;
 
+    // ask admin to enter the productID to edit
     cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
     getline(cin, selection);
 
+    // handle cancel option
 	if (selection == "C" || selection == "c") {
         cout << "\nOperation cancelled.\n";
         cout << "Press [ENTER] to continue.";
@@ -3847,8 +3882,10 @@ void editProduct(const string& currentCategory) {
         manageProduct();
     }
     string product_id = selection;
+    // search for product
     Product* productToEdit = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
 
+    // validate product exists and is in correct category
     if (!productToEdit) {
         cout << "Product with ID '" << product_id << "' not found." << endl;
         cout << "Press [ENTER] to continue.";
@@ -3862,21 +3899,26 @@ void editProduct(const string& currentCategory) {
         manageProduct();
     }
 
+    // display editing header
     cout << "\nEditing product: " << productToEdit->product_name << endl;
 	cout << "[Press ENTER to keep current data]"<< endl;
 	Products productList;
+    // load products into list
     if (!loadProductsIntoList(productList)) {
         cout << "Error loading products!\n";
         return;
     }
+    // new name input loop
     while (true) {
         cout << "\nEnter new name: ";
         getline(cin, new_name);
+        // Keep current name if input empty
         if (new_name.empty()) {
             new_name = productToEdit->product_name;
             break;
         }
 
+        // validate name format
         bool valid = true;
 		int charCount = 0;
 		for (int i = 0; i < new_name.length(); ++i) {
@@ -3888,10 +3930,6 @@ void editProduct(const string& currentCategory) {
 		    if (isalnum(c)) 
 		        charCount++;
 		}
-		if (new_name.empty()) {
-		    cout << "Name cannot be empty.\n";
-		    continue;
-		}
 		if (!valid || charCount < 3 || charCount > 100) {
 		    cout << "Invalid name! Please enter a valid name.\n";
 		    continue;
@@ -3902,7 +3940,7 @@ void editProduct(const string& currentCategory) {
             cout << "This product name already exists. Please use a different name.\n";
         }
     }
-
+    // category input loop
     while (true) {
         cout << "\nSelect category :\n";
         for (int i = 0; i < 3; ++i) {
@@ -3910,12 +3948,12 @@ void editProduct(const string& currentCategory) {
         }
         cout << "\nEnter new category (1-3): ";
         getline(cin, category_input);
-
+        // Keep current category if input empty
         if (category_input.empty()) {
             new_category = productToEdit->category;
             break;
         }
-
+        // validate category selection
         try {
             choice = stoi(category_input);
             if (choice >= 1 && choice <= 3) {
@@ -3928,14 +3966,16 @@ void editProduct(const string& currentCategory) {
             cout << "Invalid input. Please enter a number.\n";
         }
     }
-
+    // new price input loop
     while (true) {
         cout << "\nEnter new price: ";
         getline(cin, price_input);
+        // Keep current price if input empty
         if (price_input.empty()) {
             new_price = productToEdit->price;
             break;
         }
+        // validate price format
         try {
             new_price = stod(price_input);
             if (new_price <= 0) throw invalid_argument("Price must be positive.");
@@ -3944,9 +3984,11 @@ void editProduct(const string& currentCategory) {
             cout << "Invalid price! Please enter a valid positive number.\n";
         }
     }
+    // new description input loop
 	while (true) {
         cout << "\nEnter new description: ";
         getline(cin, new_description);
+        // Keep current description if input empty
         if (new_description.empty()) {
             new_description = productToEdit->description;
             break;
@@ -3954,18 +3996,19 @@ void editProduct(const string& currentCategory) {
         else
         	break;
     }
+    // new status input loop
     while (true) {
         cout << "\nSelect status:\n";
         cout<<"1. Active"<< endl;
         cout<<"2. Inactive"<<endl;
         cout << "\nEnter new status (1 or 2): ";
         getline(cin, status_input);
-
+        // Keep current status if input empty
         if (status_input.empty()) {
             new_status = productToEdit->status;
             break;
         }
-
+        // validate status selection
         try {
             choice = stoi(status_input);
             if (choice == 1) {
@@ -3983,7 +4026,7 @@ void editProduct(const string& currentCategory) {
             cout << "Invalid input. Please enter a number.\n";
         }
     }
-
+    // update product in list
     Node<Product>* current = productList.getHead();
     while (current != nullptr) {
         if (current->data.product_id == product_id) {
@@ -4008,12 +4051,13 @@ void editProduct(const string& currentCategory) {
     manageProduct();
 }
 
-
+// function for admin to edit product status
 void changeProductStatus(const string& currentCategory){
 	string selection, choice, status_input, new_status;
 	cout << "\nEnter the Product ID to edit (or 'C' to cancel): ";
     getline(cin, selection);
 
+    // handle cancel option
 	if (selection == "C" || selection == "c") {
         cout << "\nOperation cancelled.\n";
         cout << "Press [ENTER] to continue.";
@@ -4021,8 +4065,10 @@ void changeProductStatus(const string& currentCategory){
         manageProduct();
     }
     string product_id = selection;
+    // search for product
     Product* productToEdit = binarySearchProduct(products, 0, productCount - 1, product_id, "product_id");
 
+    // validate product exists and is in correct category
     if (!productToEdit) {
         cout << "Product with ID '" << product_id << "' not found." << endl;
         cout << "Press [ENTER] to continue.";
@@ -4035,16 +4081,19 @@ void changeProductStatus(const string& currentCategory){
         cin.ignore();
         manageProduct();
     }
+    // display editing header
     cout << "\nEditing product: " << productToEdit->product_name << endl;
     cout << "Current Status : " << productToEdit->status << endl;
 	cout << "\nDo you want to change product status?[Y/N]: ";
 	getline(cin, choice);
 
+    // load products into list
 	Products productList;
     if (!loadProductsIntoList(productList)) {
         cout << "Error loading products!\n";
         return;
     }
+    // process status change if confirmed
     if(choice == "Y"|| choice == "y"){
 		if(productToEdit->status == "Active")
 			new_status = "Inactive";
@@ -4071,7 +4120,7 @@ void changeProductStatus(const string& currentCategory){
     manageProduct();
 }
 
-
+// function for admin to view product details
 void displayProductAdmin(const Product& product) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "| Product ID: " << left << setw(55) << product.product_id << "|" << endl;
@@ -4201,8 +4250,9 @@ void manageProduct() {
     }
 }
 
-
+// function for admin to change member status
 void changeMemberStatus() {
+    // load member data
     memberList.loadMembers();
     clearScreen();
     cout << "===========================================================================\n";
@@ -4219,12 +4269,15 @@ void changeMemberStatus() {
     }
     cout << "===========================================================================\n";
     string chosenId;
+    // search member ID operations loop
     while (true) {
         cout << "\nEnter Member ID to change status (or 'C' to cancel): ";
         getline(cin, chosenId);
+        // handle cancel option
         if (chosenId == "C" || chosenId == "c") {
             return;
         }
+        // search for member
         current = memberList.getHead();
         bool found = false;
         while (current != nullptr) {
@@ -4234,12 +4287,15 @@ void changeMemberStatus() {
             }
             current = current->next;
         }
+        // show error if not found
         if (!found) {
             cout << "\nError: Member ID '" << chosenId << "' not found. Please try again.\n";
             continue;
         }
         break;
     }
+
+    // get current member status
     current = memberList.getHead();
     while (current != nullptr) {
         if (current->data.member_id == chosenId) {
@@ -4251,6 +4307,8 @@ void changeMemberStatus() {
         }
         current = current->next;
     }
+
+    //save change to member file
     ofstream file(MEMBERS_FILE);
     if (file) {
         current = memberList.getHead();
@@ -4270,12 +4328,14 @@ void changeMemberStatus() {
         }
         file.close();
     }
+
+    // success message
     cout << "\nMember " << chosenId << " status changed successfully.\n";
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
 
-
+// manage member menu
 void manageMember() {
     while (true) {
         clearScreen();
@@ -4288,9 +4348,12 @@ void manageMember() {
         cout << "| [4] Return to Admin Menu                                                |\n";
         cout << "===========================================================================\n";
         string choice;
+
+        // get admin choice
         cout << "Enter your choice: ";
         getline(cin, choice);
         
+        // handle menu options
         if (choice == "1") {
             viewMemberList("Active");
         }
@@ -4310,8 +4373,9 @@ void manageMember() {
     }
 }
 
-
+// function for admin to view active or inactive admin list
 void viewAdminList(const string& statusFilter) {
+    // load admin data from file
     adminList.loadAdmins();
     Node<Admin>* current = adminList.getHead();
     clearScreen();
@@ -4323,7 +4387,9 @@ void viewAdminList(const string& statusFilter) {
         cout << "|                           INACTIVE ADMIN LIST                           |\n";      
     }
     cout << "===========================================================================\n"; 
+    // track if any mmeber matching the filter were found
     bool foundAny = false;
+    // while the current is not null
     while (current != nullptr) {
         if (current->data.status == statusFilter) {
             foundAny = true;
@@ -4336,6 +4402,7 @@ void viewAdminList(const string& statusFilter) {
         }
         current = current->next;
     }
+    // handle case where no admins were found
     if (!foundAny) {
         cout << "|                                                                         |\n";
         cout << "|                      No " << left << setw(48) << (statusFilter + " admins found.") << "|\n";
@@ -4346,22 +4413,28 @@ void viewAdminList(const string& statusFilter) {
         clearScreen();
         return; 
 	}
+    // admin search functionality
     while (true) {
         string searchChoice;
         cout << "\nDo you want to search admin by ID? (Y/N to return): ";
         getline(cin, searchChoice);
+        // handle return option
         if (searchChoice == "N" || searchChoice == "n") {
             return;
         } else if (searchChoice == "Y" || searchChoice == "y") {
             string searchId;
             cout << "\nEnter Admin ID to search (or 'C' to cancel): ";
             getline(cin, searchId);
+            // handle cancel option
             if (searchId == "C" || searchId == "c") {
                 continue;
             }
+            // reset to beginning of list for new search
             current = adminList.getHead();
             bool found = false;
+            // while the current is not null
             while (current != nullptr) {
+                // check for matching ID and status
                 if (current->data.admin_id == searchId && current->data.status == statusFilter) {
                     clearScreen();
                     cout << "===========================================================================\n";
@@ -4379,6 +4452,7 @@ void viewAdminList(const string& statusFilter) {
                 }
                 current = current->next;
             }
+            // handle case where member not found
             if (!found) {
                 cout << "Admin with ID " << searchId << " not found in " << statusFilter << " admins.\n";
             }
@@ -4386,14 +4460,17 @@ void viewAdminList(const string& statusFilter) {
             cin.ignore();
             clearScreen();
             break;
-        } else {
+        }
+        // handle invalid input 
+        else {
             cout << "Invalid choice. Please enter Y (Yes), or N (No).\n";
         }
     }
 }
 
-
+// function for superadmin to change admin status
 void changeAdminStatus() {
+    // load admin data
    	adminList.loadAdmins();
     clearScreen();
     cout << "==========================================================================================\n";
@@ -4411,12 +4488,15 @@ void changeAdminStatus() {
     }
     cout << "==========================================================================================\n";
     string chosenID;
+    // search admin ID operations loop
     while (true) {
         cout << "\nEnter admin name to change status (or 'C' to cancel): ";
         getline(cin, chosenID);
+        // handle cancel option
         if (chosenID == "C" || chosenID == "c") {
             return;
         }
+        // search for admin
         current = adminList.getHead();
         bool found = false;
         while (current != nullptr) {
@@ -4426,16 +4506,19 @@ void changeAdminStatus() {
             }
             current = current->next;
         }
+        // show error if not found
         if (!found) {
             cout << "\nError: Admin ID '" << chosenID << "' not found. Please try again.\n";
             continue;
         }
+        // prevent superadmin from changing own status
         if(chosenID == loggedInAdmin.admin_id && loggedInAdmin.position == "superadmin") {
 	    	cout << "\nERROR: Superadmin cannot change their own status.\n";
 	    	continue;
     	}
         break;
     }
+    // get current admin status
     current = adminList.getHead();
     while (current != nullptr) {
         if (current->data.admin_id == chosenID) {
@@ -4447,6 +4530,7 @@ void changeAdminStatus() {
         }
         current = current->next;
     }
+    //save change to admin file
     ofstream file(ADMINS_FILE);
     if (file) {
         current = adminList.getHead();
@@ -4467,13 +4551,15 @@ void changeAdminStatus() {
         }
         file.close();
     }
+    // success message
     cout << "\nAdmin " << chosenID << " status changed successfully.\n";
     cout << "\nPress [ENTER] to continue.";
     cin.ignore();
 }
 
-
+// function for save new admin data to admin file
 void saveAdmin(const Admin& admin) {
+    // check if file is empty
     bool fileIsEmpty = true;
     {
         ifstream file(ADMINS_FILE);
@@ -4484,6 +4570,7 @@ void saveAdmin(const Admin& admin) {
             }
         }
     }
+    // save and append admin data
     ofstream file(ADMINS_FILE, ios::app);
     if (file) {
         if (!fileIsEmpty) {
@@ -4499,8 +4586,9 @@ void saveAdmin(const Admin& admin) {
     }
 }
 
-
+// function for superadmin to add new admin
 void addNewAdmin() {
+    // generate new admin id
 	string admin_id = getNextAdminId();
 	string position = "admin";
     string status = "Active";
@@ -4517,15 +4605,18 @@ void addNewAdmin() {
     cout << "| -> Password need one uppercase, lowercase, number                       |\n";
     cout << "| -> Contact format: 012-3456789 or 012-34567890                          |\n";
     cout << "===========================================================================";
+    // get and validate name
     while (true) {
         cout << "\nEnter admin name (or 'C' to cancel): ";
         getline(cin, name);
+        // handle cancel option
         if (name == "C" || name == "c") {
             cout << "\nOperation cancelled.\n";
             cout << "Press [ENTER] to continue.";
             cin.ignore();
             return;
         }
+        // validate name format
         bool valid = true;
         int letterCount = 0;
         for (int i = 0; i < name.length(); ++i) {
@@ -4537,19 +4628,24 @@ void addNewAdmin() {
             if (isalpha(c)) 
                 letterCount++;
         }
+        // check for empty name
         if (name.empty()) {
             cout << "Name cannot be empty.\n";
             continue;
         }
+        // validate length and characters
         if (!valid || letterCount < 5) {
             cout << "Invalid name! Please enter a valid name.\n";
             continue;
         }
         break;
     }
+    // get and validate email
     while (true) {
         cout << "\nEnter email (example: user@example.com): ";
 		getline(cin, email);
+
+        // validate email format
         int atPosition = -1;
         int dotPosition = -1;
         int atCount = 0;
@@ -4561,6 +4657,7 @@ void addNewAdmin() {
                 dotPosition = i;
             }
         }
+        // check for empty email
         if (email.empty()) {
             cout << "Email cannot be empty.\n";
             continue;
@@ -4584,27 +4681,33 @@ void addNewAdmin() {
                 break;
             }
         }
+        // show error if invalid
         if (!valid) {
             cout << "Invalid email format! Please enter a valid email.\n";
             continue;
         }
+        // check if email already exists
         if (adminList.itemExists(email)) {
             cout << "This email is already registered!\n";
             continue;
         }
         break;
     }
+    // get and validate password
     while (true) {
         cout << "\nEnter password: ";
         getline(cin, password);
+        // check for empty password
         if (password.empty()) {
             cout << "Password cannot be empty.\n";
             continue;
         }
+        // validate password strength
 		if (password.length() < 8) {
             cout << "Password must be at least 8 characters!\n";
             continue;
         }
+        // check password requirements
         bool hasUpper = false, hasLower = false, hasDigit = false;
         for (int i = 0; i < password.length(); ++i) {
             char c = password[i];
@@ -4624,6 +4727,7 @@ void addNewAdmin() {
             cout << "Password must have at least 1 number!\n";
             continue;
         }
+        // confirm password
         cout << "\nConfirm your password: ";
         getline(cin, confirm_password);
         if (confirm_password != password) {
@@ -4632,6 +4736,7 @@ void addNewAdmin() {
         }
         break;
     }
+    // get and validate contact number
     while (true) {
         cout << "\nEnter contact number (example: 012-3456789): ";
         getline(cin, contact);
@@ -4639,14 +4744,17 @@ void addNewAdmin() {
         bool valid = true;
 		int i = 0;
 		int digitCount = 0;
+        // check for empty contact
 		if (contact.empty()) {
             cout << "Contact number cannot be empty.\n";
             continue;
         }
+        // validate contact starts with 01
         if (!(p[0] == '0' && p[1] == '1')) {
 	        cout << "Contact number must start with '01'.\n";
 	        valid = false;
 	    }
+        // validate contact format
 		while (p[i] != '\0') {
 			if (i == 3 && p[i] != '-'){
 				valid = false;
@@ -4662,38 +4770,46 @@ void addNewAdmin() {
 			}
 			i++;
 		}
+        // validate digit count
 		if (valid && (digitCount < 10 || digitCount > 11)) {
 	        cout << "Contact number must be 10 or 11 digits total.\n";
 	        valid = false;
 	    }
+        // validate minimum length
 	    if (valid && i < 4) {
 	        cout << "Invalid contact number. Please enter a valid contact number.\n";
 	        valid = false;
 	    }
+        // show error if invalid
 	    if (!valid) {
 	        cout << "Invalid contact number format.\n";
 	        continue;
 	    }
+        // check if contact already exists
 	    if (adminList.itemExists(contact)) {
 	        cout << "This contact number is already registered!\n";
 	        continue;
 	    }
         break;
     }
+    // create and save new admin
 	Admin newAdmin(admin_id, name, email, password, contact, position, status);
 	adminList.append(newAdmin);
 	saveAdmin(newAdmin); 
+
+    // save and append admin id to id file
     ofstream idFile(ADMINS_ID_FILE, ios::app);
     if (idFile) {
         idFile << admin_id << "\n";
         idFile.close();
 	}
+    // show success message
 	cout << "\nAdmin " << name << " added successfully!\n";
     cout << "Press [ENTER] to continue.";
     cin.ignore();
 }
 
-
+// manage admin menu
 void manageAdmin() {
     while (true) {
     	string choice;
@@ -4703,6 +4819,7 @@ void manageAdmin() {
         cout << "===========================================================================\n";
         cout << "| [1] View Active Admins                                                  |\n";
         cout << "| [2] View Inactive Admins                                                |\n";
+        // show additional options for superadmin
         if (loggedInAdmin.position == "superadmin"){
         	cout << "| [3] Add New Admin                                                       |\n";
 	        cout << "| [4] Change Admin Status                                                 |\n";
@@ -4715,6 +4832,7 @@ void manageAdmin() {
 		}
 		cout << "Enter your choice: ";
         getline(cin, choice);
+        // handle menu options
 		if (choice == "1") {
             viewAdminList("Active");
         }
@@ -4739,6 +4857,8 @@ void manageAdmin() {
         }
     }
 }
+
+// function for admin to view all sorted order records
 void viewSortedOrderHistoryAdmin(Order* orders[], int orderCount) {
     clearScreen();
     cout << "==================================================================" << endl;
@@ -4771,15 +4891,18 @@ void viewSortedOrderHistoryAdmin(Order* orders[], int orderCount) {
     viewOrderHistoryAdmin();
 }
 
+// function for admin to view all order record
 void viewOrderHistoryAdmin() {
+    // an array of pointers to Order objects
     const int MAX_ORDERS = 100;
     Order* orders[MAX_ORDERS];
     int orderCount = 0;
     string line;
 
+    // load order records from file
     ifstream file(PURCHASE_HISTORY_FILE);
     if (!file) {
-        cout << "No purchase history found." << endl;
+        cout << "No order record found." << endl;
         cout << "Press [ENTER] to continue.";
         cin.ignore();
         cin.get();
@@ -4789,11 +4912,13 @@ void viewOrderHistoryAdmin() {
     while (orderCount < MAX_ORDERS && getline(file, line)) {
         if (line.empty()) continue;
 
+        // Check if the line is an order header by counting commas
         int commaCount = 0;
         for (int i = 0; i < line.length(); i++) {
             if (line[i] == ',') commaCount++;
         }
 
+        // this is an order header line
         if (commaCount == 4) {
             stringstream ss(line);
             string orderId, memberId, datetime, paymentMethod, totalAmountStr;
@@ -4843,6 +4968,7 @@ void viewOrderHistoryAdmin() {
                 itemCount++;
             }
 
+            // create order object
             orders[orderCount] = new CashOrder(orderId, memberId, datetime, totalAmount, tempItems, itemCount);
             orders[orderCount]->paymentMethod = paymentMethod;
             orderCount++;
@@ -4850,8 +4976,10 @@ void viewOrderHistoryAdmin() {
     }
     file.close();
 
+    // sort orders by date (newest first)
     quickSortOrder(orders, 0, orderCount - 1, "datetime", true);
 
+    // display orders
     clearScreen();
     cout << "==================================================================" << endl;
     cout << "|                        ORDERS RECORDS                          |" << endl;
@@ -4881,6 +5009,7 @@ void viewOrderHistoryAdmin() {
             cout << "==================================================================" << endl << endl;
         }
 
+        // show options menu
         string option;
 		cout << "1. Search Orders" << endl;
 		cout << "2. Sort Orders" << endl;
@@ -4888,6 +5017,7 @@ void viewOrderHistoryAdmin() {
 		cout << "\nEnter your choice (1-3): ";
 		getline(cin, option);
 		
+        // handle search option
 		if (option == "1") {
 		    string searchType;
 		    cout << "---------------------------------" << endl;
@@ -4899,19 +5029,22 @@ void viewOrderHistoryAdmin() {
 		    cout << "\nEnter your choice (1-3): ";
 		    getline(cin, searchType);
 		
+            // search by order id
 		    if (searchType == "1") {
 		        quickSortOrder(orders, 0, orderCount - 1, "order_id");
 		        string searchId;
 		        cout << "\nEnter Order ID to search: ";
 		        getline(cin, searchId);
 		
+                // perform binary search
 		        Order* found = binarySearchOrder(orders, 0, orderCount - 1, searchId, "order_id");
 		
 		        clearScreen();
 		        cout << "==================================================================" << endl;
 		        cout << "|                       ORDER ID: " << left << setw(31) << searchId << "|" << endl;
 		        cout << "==================================================================" << endl;
-		        if (found != nullptr) {
+		        // display found order
+                if (found != nullptr) {
 		            cout << "------------------------------------------------------------------" << endl;
 		            cout << "| Member ID    : " << left << setw(48) << found->memberId << "|" << endl;
 		            cout << "| Date         : " << left << setw(48) << found->date << "|" << endl;
@@ -4929,10 +5062,14 @@ void viewOrderHistoryAdmin() {
 		            }
 		            cout << "| Total Amount: RM " << left << setw(46) << fixed << setprecision(2) << found->totalAmount << "|" << endl;
 		            cout << "==================================================================" << endl;
-		        } else {
+		        }
+                // show message if no orders found 
+                else {
 		            cout << "\nOrder ID " << searchId << " not found." << endl;
 		        }
-		    } else if (searchType == "2") {
+		    }
+            // search by member id
+             else if (searchType == "2") {
 		        string searchMemberId;
 		        cout << "\nEnter Member ID to search: ";
 		        getline(cin, searchMemberId);
@@ -4943,6 +5080,7 @@ void viewOrderHistoryAdmin() {
 		        cout << "|                 ORDERS FOR MEMBER ID: " << left << setw(25) << searchMemberId << "|" << endl;
 		        cout << "==================================================================" << endl;
 		
+                // search through all orders
 		        for (int i = 0; i < orderCount; ++i) {
 		            if (orders[i]->memberId == searchMemberId) {
 		                found = true;
@@ -4964,22 +5102,28 @@ void viewOrderHistoryAdmin() {
 		                cout << "==================================================================" << endl;
 		            }
 		        }
-		
+                // show message if no orders found
 		        if (!found) {
 		            cout << "\nNo orders found for Member ID: " << searchMemberId << endl;
 		        }
 		
-		    } else if (searchType == "3") {
+		    }
+            // return to order history menu if cancelled
+            else if (searchType == "3") {
 			    viewOrderHistoryAdmin();
 			    return;
-			} else {
+			}
+            // handle invalid input 
+            else {
 		        cout << "\nInvalid input. Press [ENTER] to return to order history menu.\n";
 		        cin.ignore();
 		        cin.get();
 		        viewOrderHistoryAdmin();
 		    }
 		
-		} else if (option == "2") {
+		}
+        // provide sort option
+        else if (option == "2") {
 			cout << "---------------------------------------------" << endl;
 			cout << "|              SORT ORDERS BY               |" << endl;
 			cout << "| 1. Date (Newest First)                    |" << endl;
@@ -4991,6 +5135,7 @@ void viewOrderHistoryAdmin() {
 			cout << "Enter your choice (1-3): ";
 			getline(cin, sortChoice);
 			
+            // handle search option
 			if (sortChoice == "1") {
 			    quickSortOrder(orders, 0, orderCount - 1, "datetime", true);
 			    viewSortedOrderHistoryAdmin(orders, orderCount);
@@ -4999,17 +5144,23 @@ void viewOrderHistoryAdmin() {
 			    viewSortedOrderHistoryAdmin(orders, orderCount);
 			} else if (sortChoice == "3") {
 			    viewOrderHistoryAdmin();
-			} else {
+			}
+            // handle invalid input
+            else {
 			    cout << "\nInvalid input. Press [ENTER] to try again.";
 			    cin.ignore();
 			    cin.get();
 			    viewOrderHistoryAdmin();
 			}
-		} else if (option == "3") {
+		}
+        //return to admin menu
+        else if (option == "3") {
 		    adminMenu(loggedInAdmin);
 		    return;
 		
-		} else {
+		}
+        // handle invalid input
+        else {
 		    cout << "\nInvalid input. Press [ENTER] to try again.";
 		    cin.ignore();
 		    cin.get();
