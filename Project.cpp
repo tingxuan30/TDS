@@ -3824,7 +3824,7 @@ void addProduct(){
 
 	// save the new product
 	products.saveProduct(newProduct); 
-	cout << product_name << " added successfully!\n";
+	cout << "\n" << product_name << " added successfully!\n";
     cout << "Press [ENTER] to continue.";
     cin.ignore();
     manageProduct();
@@ -5517,12 +5517,12 @@ public:
 				// get sorting preference
 				while (true) {
 					cout << "--------------------------------------" << endl;
-				    cout << "| Sort sales summary by: " << "            |" << endl;
+				    cout << "| Sort sales report by: " << "             |" << endl;
 				    cout << "| 1. Total Revenue (Sales) " << "          |" << endl;
 				    cout << "| 2. Quantity Sold " << "                  |" << endl;
 				    cout << "| 3. Return to Sales Report Menu " << "    |" << endl;
 				    cout << "--------------------------------------" << endl;
-				    cout << "Enter choice (1, 2, or 3): ";
+				    cout << "Enter choice : ";
 				    getline(cin, sortChoice);
 				
 				    if (sortChoice == "1") {
@@ -5575,7 +5575,7 @@ public:
 				    cout << "| 2. Quantity Sold " << "                  |" << endl;
 				    cout << "| 3. Return to Sales Report Menu " << "    |" << endl;
 				    cout << "--------------------------------------" << endl;
-				    cout << "Enter choice (1, 2, or 3): ";
+				    cout << "Enter choice : ";
 				    getline(cin, sortChoice);
 				
 				    if (sortChoice == "1") {
