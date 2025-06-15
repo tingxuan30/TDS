@@ -1872,7 +1872,7 @@ bool loadProducts() {
             parts[i] = removeQuotes(parts[i]);
         }
 
-        //assign the attributes to product struct
+        //assign the attributes to product dynamic array
         products[index].product_id = parts[0];
         products[index].product_name = parts[1];
         products[index].category = parts[2];
