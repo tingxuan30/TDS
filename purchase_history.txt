@@ -5,3 +5,26 @@ ORD2,U0002,2025-06-12 18:06:28,17.80,Credit Card
 130,Peach Tea,1,6.90,Cold,Bottle
 150,Nacho Cheese Ball,1,10.90,Garlic Aioli Dip,1 pax
 
+ORD3,U0001,2025-06-16 17:52:01,897.20,Debit Card
+121,Sweet N Sour Mushroom,2,46.90,Crackin Thin,Regular
+121,Sweet N Sour Mushroom,10,58.90,Pan,Large
+121,Sweet N Sour Mushroom,5,34.90,Cheesy Crust,Personal
+133,Mineral Water,2,5.00,Cold,Bottle
+152,Snackbox 2,1,29.90,Garlic Aioli Dip,2 pax
+
+ORD4,U0003,2025-03-20 13:56:21,64.79,Cash
+111,Beef Pepperoni,1,40.09,Cheesy Crust,Large
+131,Lemonade,2,4.90,Cold,Tin
+134,Krispy Curly Fries,1,14.90,Spicy Nacho Cheese Dip,2 pax
+
+ORD5,U0004,2025-04-18 17:59:18,63.68,Credit Card
+109,Aloha Chicken,1,16.09,Pan,Personal
+115,Deluxe Cheese,1,40.09,Cheesy Crust,Large
+125,Coke,1,7.50,Cold,Bottle
+
+ORD6,U0002,2025-06-16 18:00:41,75.78,Cash
+101,Cheeseburger Chicken,2,30.49,Stuffed Crust,Regular
+130,Peach Tea,1,4.90,Cold,Tin
+133,Mineral Water,1,3.00,Cold,Tin
+147,Huts Breadstix Cinnamon,1,6.90,Garlic Aioli Dip,1 pax
+
