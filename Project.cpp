@@ -831,6 +831,34 @@ string removeQuotes(const string& s) {
         return s;
 }
 
+// check if a string contains only digits 0-9
+bool isAllDigits(const string& str) {
+    int len = str.length();
+    // empty input is not valid
+    if (len == 0) {
+        return false; 
+    }
+    for (int i = 0; i < len; ++i) {
+        if (!isdigit(str[i])) {
+            return false;
+        }
+    }
+    // all characters are digits
+    return true;
+}
+
+// get the current date and time in format "YYYY-MM-DD HH:MM:SS"
+string getCurrentDateTime() {
+    // get current time
+    time_t now = time(nullptr);
+    // convert to local time
+    tm* localTime = localtime(&now);
+
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
+    return string(buffer);
+}
+
 //function for swapping and determining pivot for product
 int partitionProduct(Product* arr, int low, int high, const string& key) {
     //select last element in the subarray as pivot
@@ -2845,22 +2873,6 @@ void addToCart(const string& product_id, int quantity, string attribute1, Attrib
     delete[] cart;
 }
 
-// check if a string contains only digits 0-9
-bool isAllDigits(const string& str) {
-    int len = str.length();
-    // empty input is not valid
-    if (len == 0) {
-        return false; 
-    }
-    for (int i = 0; i < len; ++i) {
-        if (!isdigit(str[i])) {
-            return false;
-        }
-    }
-    // all characters are digits
-    return true;
-}
-
 // function to delete the item in cart
 void deleteCart(CartItem*& cart, int& cartSize) {
     while (true) {
@@ -3476,18 +3488,6 @@ void viewPurchaseHistory() {
     cin.get();
     clearScreen();
     memberMenu(loggedInMember);
-}
-
-// get the current date and time in format "YYYY-MM-DD HH:MM:SS"
-string getCurrentDateTime() {
-    // get current time
-    time_t now = time(nullptr);
-    // convert to local time
-    tm* localTime = localtime(&now);
-
-    char buffer[80];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
-    return string(buffer);
 }
 
 // function that user can submit the rating and feedback
