@@ -4,3 +4,4 @@ ORD1,U0002,2025-05-12 17:58:16,27.18,Cash
 ORD2,U0002,2025-06-12 18:06:28,17.80,Credit Card
 130,Peach Tea,1,6.90,Cold,Bottle
 150,Nacho Cheese Ball,1,10.90,Garlic Aioli Dip,1 pax
+
