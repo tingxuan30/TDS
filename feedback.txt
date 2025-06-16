@@ -1,8 +1,32 @@
 U0001
 5
-gooood
+Fast and easy to use!
 2025-06-11 13:10:57
 U0001
 4
-Niceeee
+Much quicker than ordering at the counter
 2025-06-11 13:17:19
+U0001
+5
+nice system
+2025-05-14 21:56:48
+U0002
+2
+The interface was confusing
+2025-03-25 20:23:54
+U0003
+1
+The system not support e-wallet payment
+2025-04-19 15:14:41
+U0004
+3
+It works, but nothing special
+2025-05-01 11:14:04
+U0003
+3
+I wish it allowed more remark customization
+2025-05-03 10:00:04
+U0003
+3
+Not very user-friendly for first-timers.
+2025-05-01 12:30:04

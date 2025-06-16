@@ -5977,7 +5977,7 @@ void viewDashboard() {
     // display order and sales statistics
     cout << "| Orders:   " << setw(4) << totalOrders << " total | " 
          << "Sales: RM " << setw(6) << fixed << setprecision(2) << totalSales 
-         << setw(25) << " |\n";
+         << setw(24) << " |\n";
     cout << "|---------------------------------------------------------------|\n";
     // display monthly sales header
     cout << "| MONTHLY SALES (" << currentYear << "):                                         |\n";
