@@ -1,20 +1,40 @@
-+-----------------------------------------------------------------------+
-|									|
-|			PIZZA SYSTEM README FILE			|
-|									|
-+-----------------------------------------------------------------------+
-| These are our valid data for logining as member, admin and superadmin:|
-|									|
-| 1) Member email	: yuxuan@gmail.com 				|
-|    Member password	: Yuxuan123					|
-|									|
-| 2) Admin email	: zhixin@gmail.com				|
-|    Admin password	: Zhixin123					|
-|									|
-| 3) Superadmin email		: yuxuan@gmail.com 			|
-|    Superadmin password	: Yuxuan123				|
-|									|
-+-----------------------------------------------------------------------+
+  PIZZA SYSTEM README FILE			
+
+  These are our valid data for logining as member, admin and superadmin:
+
+1. Member email	    : yuxuan@gmail.com 				
+   Member password	: Yuxuan123					
+
+2. Admin email	  : zhixin@gmail.com				
+   Admin password	: Zhixin123					
+
+3. Superadmin email		 : yuxuan@gmail.com 			
+   Superadmin password : Yuxuan123													
+
+-------------------------------------------------------------------------
+
+Requirements:
+  - Dev C++ IDE 
+  - Windows OS (recommended) 
+
+Setup Instructions:
+1. download the source code 
+2. Ensure all data files are in the same directory: 
+  - admin_id.txt
+  - admin.txt
+  - feedback.txt
+  - member_id.txt
+  - member.txt
+  - order_id_counter.txt
+  - product_id_counter.txt
+  - product.txt
+  - purchase_history.txt
+
+3. Open Project_GR2.cpp in Dev C++ 
+
+4. Compile with F11 or Execute → Compile & Run
+
+-------------------------------------------------------------------------
 
 Table of Contents：
 
@@ -118,8 +138,8 @@ Superadmin: Higher-level admins with additional user management functions can ma
       and display a reminder of successful register:
 
       ________________________________________________________
-          |Registration successful! Your Member ID: U0001        |
-        |______________________________________________________|
+      |Registration successful! Your Member ID: U0001        |
+      |______________________________________________________|
 
 
 
@@ -140,8 +160,8 @@ Superadmin: Higher-level admins with additional user management functions can ma
 
     * When you login successful, it will display a reminder of successful login:
       ________________________________________________________
-            |Logged in Successfully!			       |
-            |______________________________________________________|
+      |Logged in Successfully!			    		    		         |
+      |______________________________________________________|
 
 
 -------------------------------------------------------------------------
