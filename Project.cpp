@@ -610,7 +610,7 @@ class CashOrder : public Order {
         void displayReceipt() const override {
             // call base displayReceipt()
             Order::displayReceipt();
-            cout << "Cash Received: RM " << fixed << setprecision(2) << cashReceived << endl;
+            
             if (change > 0) {
                 cout << "Change       : RM " << fixed << setprecision(2) << change << endl;
             }
