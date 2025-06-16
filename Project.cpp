@@ -4322,7 +4322,7 @@ void changeMemberStatus() {
                  << current->data.email << "\n"
                  << current->data.password << "\n"
                  << current->data.contact << "\n"
-                 << current->data.status;
+                 << current->data.status << "\n";
             firstMember = false;
             current = current->next;
         }
@@ -4885,7 +4885,7 @@ void viewSortedOrderHistoryAdmin(Order* orders[], int orderCount) {
         cout << "==================================================================" << endl << endl;
     }
 
-    cout << "\nPress [ENTER] to return to order history menu.";
+    cout << "\nPress [ENTER] to return to order record menu.";
     cin.ignore();
     cin.get();
     viewOrderHistoryAdmin();
@@ -5115,7 +5115,7 @@ void viewOrderHistoryAdmin() {
 			}
             // handle invalid input 
             else {
-		        cout << "\nInvalid input. Press [ENTER] to return to order history menu.\n";
+		        cout << "\nInvalid input. Press [ENTER] to return to order record menu.\n";
 		        cin.ignore();
 		        cin.get();
 		        viewOrderHistoryAdmin();
@@ -5170,7 +5170,7 @@ void viewOrderHistoryAdmin() {
 	for (int i = 0; i < orderCount; ++i) {
         delete orders[i];
     }
-	cout << "\nPress [ENTER] to return to order history menu.";
+	cout << "\nPress [ENTER] to return to order record menu.";
     cin.ignore();
     cin.get();
     viewOrderHistoryAdmin();
