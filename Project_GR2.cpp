@@ -4020,7 +4020,7 @@ void editProduct(const string& currentCategory) {
                 break;
             } 
 			else {
-                cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+                cout << "Invalid choice. Please enter 1 or 2.\n";
             }
         } catch (const invalid_argument& e) {
             cout << "Invalid input. Please enter a number.\n";
@@ -4034,11 +4034,11 @@ void editProduct(const string& currentCategory) {
             if (!new_category.empty()) current->data.category = new_category;
             if (new_price >= 0) current->data.price = new_price;
             if (!new_description.empty()) current->data.description = new_description;
+            if (!new_status.empty()) current->data.status = new_status;
             break;
         }
         current = current->next;
     }
-
     // Save the updated list
     if (!saveProductList(productList)) {
         cout << "Error saving products!\n";
